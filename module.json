@@ -1,0 +1,30 @@
+{
+  "id": "tems-weapons",
+  "title": "Tem's Weapons",
+  "description": "Tem's custom weapons for D&D5e, including the automated Charge Blade.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "14",
+    "verified": "14"
+  },
+  "authors": [
+    {
+      "name": "Tem"
+    }
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system",
+        "compatibility": {
+          "minimum": "5.3.0",
+          "verified": "5.3.2"
+        }
+      }
+    ]
+  },
+  "esmodules": [
+    "scripts/tems-weapons.js"
+  ]
+}
