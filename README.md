@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.3
+# Tem's Weapons v1.2.4
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -110,3 +110,10 @@ Fixes a duplicate JavaScript helper declaration that prevented the module script
 - Longsword Spirit gain/spend and Spirit Level changes occur only after a confirmed hit.
 - Longsword Spirit attacks are blocked before use if the required Spirit/Spirit Level is unavailable.
 - Dual Blades Demon Mode now toggles from the actor's real ActiveEffect state, fixing inverted ON/OFF behavior.
+
+## v1.2.4 synchronization fixes
+
+- Jet Hammer Fuel flag and visible Uses counter are now updated atomically, eliminating the one-step display lag.
+- Longsword uses the same correct `dnd5e.postRollAttack(rolls, data)` hit-confirmation pattern as Charge Blade.
+- Longsword state and its visible 0–100 indicator are updated together.
+- Dual Blades now resets to a known Demon Mode OFF state on world load and toggles only from its authoritative stored state.

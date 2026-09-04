@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.3
+ * Tem's Weapons v1.2.4
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -872,14 +872,8 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
   if (!item) return;
 
   if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES) && activity.name === "Demon Mode") {
-    const actor = item.actor;
-    const effectIsActive = Boolean(actor?.effects?.find(e =>
-      e.name === DEMON_EFFECT &&
-      e.getFlag("tems-weapons", "sourceItemId") === item.id
-    ));
-
-    // Toggle from the state that is ACTUALLY on the actor, not a possibly-stale flag.
-    const active = !effectIsActive;
+    const current = Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
+    const active = !current;
 
     await item.setFlag("world", "temsDualBladesDemonMode", active);
     await syncDemonMode(item);
@@ -982,6 +976,39 @@ async function syncHeavyResource(item) {
       await item.update({"system.uses.max":"100", "system.uses.spent":spent});
     }
   }
+}
+
+
+async function setJetFuel(item, value) {
+  const fuel = heavyClamp(Number(value) || 0, 0, 3);
+  await item.update({
+    "flags.world.temsJetFuel": fuel,
+    "system.uses.max": "3",
+    "system.uses.spent": 3 - fuel
+  });
+  ui.notifications.info(`Jet Hammer — Fuel ${fuel}/3`);
+  return fuel;
+}
+
+async function setLongswordState(item, {spirit=null, level=null}={}) {
+  const updates = {};
+  let nextSpirit = spirit === null
+    ? heavyClamp(Number(item.getFlag("world","temsLongswordSpirit") ?? 0), 0, 100)
+    : heavyClamp(Number(spirit), 0, 100);
+  let nextLevel = level === null
+    ? heavyClamp(Number(item.getFlag("world","temsLongswordLevel") ?? 0), 0, 3)
+    : heavyClamp(Number(level), 0, 3);
+
+  updates["flags.world.temsLongswordSpirit"] = nextSpirit;
+  updates["flags.world.temsLongswordLevel"] = nextLevel;
+  updates["system.uses.max"] = "100";
+  updates["system.uses.spent"] = 100 - nextSpirit;
+
+  await item.update(updates);
+  ui.notifications.info(
+    `Longsword — Spirit ${nextSpirit}/100 | Level ${spiritLevelName(nextLevel)}`
+  );
+  return {spirit:nextSpirit, level:nextLevel};
 }
 
 function spiritLevelName(level) {
@@ -1096,14 +1123,12 @@ Hooks.on("dnd5e.preUseActivity", async (activity) => {
   const id = ident(item);
   const name = activity.name;
 
-  // Jet Hammer: validate and spend Fuel BEFORE Foundry starts the activity.
+  // Jet Hammer: validate and spend Fuel atomically BEFORE Foundry starts the activity.
   if (id === HEAVY.JETHAMMER) {
-    let fuel = Number(item.getFlag("world", "temsJetFuel") ?? 3);
+    const fuel = heavyClamp(Number(item.getFlag("world", "temsJetFuel") ?? 3), 0, 3);
 
     if (name === "Vent / Refuel") {
-      await item.setFlag("world", "temsJetFuel", 3);
-      await syncHeavyResource(item);
-      notifyHeavyResource(item);
+      await setJetFuel(item, 3);
       return true;
     }
 
@@ -1117,9 +1142,7 @@ Hooks.on("dnd5e.preUseActivity", async (activity) => {
         return false;
       }
 
-      await item.setFlag("world", "temsJetFuel", heavyClamp(fuel - cost, 0, 3));
-      await syncHeavyResource(item);
-      notifyHeavyResource(item);
+      await setJetFuel(item, fuel - cost);
     }
   }
 
@@ -1269,66 +1292,62 @@ async function heavyUse(activity) {
 }
 Hooks.on("dnd5e.postCreateUsageMessage", heavyUse);
 
-Hooks.on("dnd5e.postRollAttack", async (activity, roll) => {
-  const item=activity?.item ?? activity?.parent; if(!item || !roll) return;
-  const target=Array.from(game.user.targets)[0];
+Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
+  const activity = data?.subject;
+  const item = activity?.item ?? activity?.parent;
+  if (!item) return;
 
-  let hit=true;
-  if(target?.actor) hit=roll.total >= (target.actor.system.attributes.ac.value??10);
-  const d20 = roll.dice?.[0]?.total;
-  if(d20===1) hit=false;
-  if(d20===20) hit=true;
-  if(!hit) return;
+  const targets = Array.from(game.user.targets ?? []);
+  if (!targets.length) return;
 
-  if(ident(item)===HEAVY.METEOR &&
-     ["Meteor Strike","Sweeping Censer"].includes(activity.name) &&
-     target?.actor) {
-    await rollConSaveAndDaze(item,target);
+  // Use the same confirmed-hit logic that the working Charge Blade uses.
+  const hit = (rolls ?? []).some(roll =>
+    targets.some(token => attackHitsTarget(roll, token))
+  );
+  if (!hit) return;
+
+  if (ident(item) === HEAVY.LONGSWORD) {
+    let spirit = heavyClamp(Number(item.getFlag("world","temsLongswordSpirit") ?? 0), 0, 100);
+    let level = heavyClamp(Number(item.getFlag("world","temsLongswordLevel") ?? 0), 0, 3);
+
+    switch (activity.name) {
+      case "Overhead Slash":
+        spirit = heavyClamp(spirit + 20, 0, 100);
+        break;
+
+      case "Thrust":
+        spirit = heavyClamp(spirit + 15, 0, 100);
+        break;
+
+      case "Spirit Slash":
+        spirit = heavyClamp(spirit - 20, 0, 100);
+        break;
+
+      case "Spirit Roundslash":
+        spirit = heavyClamp(spirit - 30, 0, 100);
+        level = heavyClamp(level + 1, 0, 3);
+        break;
+
+      case "Spirit Helm Breaker":
+        level = heavyClamp(level - 1, 0, 3);
+        break;
+
+      default:
+        return;
+    }
+
+    await setLongswordState(item, {spirit, level});
   }
 
-  if(ident(item)===HEAVY.LONGSWORD){
-    let spirit = Number(item.getFlag("world","temsLongswordSpirit") ?? 0);
-    let level = Number(item.getFlag("world","temsLongswordLevel") ?? 0);
-
-    if(activity.name==="Overhead Slash"){
-      spirit = heavyClamp(spirit + 20, 0, 100);
-      await item.setFlag("world","temsLongswordSpirit",spirit);
-    }
-
-    if(activity.name==="Thrust"){
-      spirit = heavyClamp(spirit + 15, 0, 100);
-      await item.setFlag("world","temsLongswordSpirit",spirit);
-    }
-
-    if(activity.name==="Spirit Slash"){
-      spirit = heavyClamp(spirit - 20, 0, 100);
-      await item.setFlag("world","temsLongswordSpirit",spirit);
-    }
-
-    if(activity.name==="Spirit Roundslash"){
-      spirit = heavyClamp(spirit - 30, 0, 100);
-      level = heavyClamp(level + 1, 0, 3);
-      await item.setFlag("world","temsLongswordSpirit",spirit);
-      await item.setFlag("world","temsLongswordLevel",level);
-    }
-
-    if(activity.name==="Spirit Helm Breaker"){
-      level = heavyClamp(level - 1, 0, 3);
-      await item.setFlag("world","temsLongswordLevel",level);
-    }
-
-    await syncHeavyResource(item);
-    notifyHeavyResource(item);
+  if (ident(item) === HEAVY.GUNHEELS &&
+      ["Pistol Barrage","Heel Shot","Afterburner Kick"].includes(activity.name)) {
+    const c = Number(item.getFlag("world","temsGunheelsCombo") ?? 0);
+    const next = heavyClamp(c + 1, 0, 3);
+    await item.setFlag("world","temsGunheelsCombo",next);
+    ui.notifications.info(`Gunheels / Pistols — Combo ${next}/3`);
   }
 
-  if(ident(item)===HEAVY.GUNHEELS &&
-     ["Pistol Barrage","Heel Shot","Afterburner Kick"].includes(activity.name)){
-    const c=Number(item.getFlag("world","temsGunheelsCombo")??0);
-    await item.setFlag("world","temsGunheelsCombo",heavyClamp(c+1,0,3));
-    ui.notifications.info(`Gunheels / Pistols — Combo ${heavyClamp(c+1,0,3)}/3`);
-  }
-
-  if(ident(item)===HEAVY.GUNHEELS && activity.name==="Bullet Climax"){
+  if (ident(item) === HEAVY.GUNHEELS && activity.name === "Bullet Climax") {
     await item.setFlag("world","temsGunheelsCombo",0);
     ui.notifications.info("Gunheels / Pistols — Combo consumed.");
   }
@@ -1463,16 +1482,19 @@ Hooks.once("ready", async () => {
       try {
         if (hasIdentifier(item, TEMS_IDS.SWORD_SHIELD)) await syncSwordShieldGuard(item);
         if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) {
-          const effectIsActive = Boolean(actor.effects.find(e =>
-            e.name === DEMON_EFFECT &&
-            e.getFlag("tems-weapons", "sourceItemId") === item.id
-          ));
-          await item.setFlag("world", "temsDualBladesDemonMode", effectIsActive);
+          // Normalize legacy/inverted state to a known clean OFF state on world load.
+          await item.setFlag("world", "temsDualBladesDemonMode", false);
           await syncDemonMode(item);
           await syncDualBladeDamage(item);
         }
         if (ident(item) === HEAVY.CANE) await syncCaneVisibility(item);
-        if ([HEAVY.JETHAMMER, HEAVY.GUNLANCE, HEAVY.LONGSWORD].includes(ident(item))) {
+        if (ident(item) === HEAVY.JETHAMMER) {
+          await setJetFuel(item, Number(item.getFlag("world","temsJetFuel") ?? 3));
+        }
+        if (ident(item) === HEAVY.LONGSWORD) {
+          await setLongswordState(item, {});
+        }
+        if (ident(item) === HEAVY.GUNLANCE) {
           await syncHeavyResource(item);
         }
       } catch (err) {
@@ -1489,7 +1511,13 @@ Hooks.once("ready", async () => {
         await syncDualBladeDamage(item);
       }
       if (ident(item) === HEAVY.CANE) await syncCaneVisibility(item);
-      if ([HEAVY.JETHAMMER, HEAVY.GUNLANCE, HEAVY.LONGSWORD].includes(ident(item))) {
+      if (ident(item) === HEAVY.JETHAMMER) {
+        await setJetFuel(item, Number(item.getFlag("world","temsJetFuel") ?? 3));
+      }
+      if (ident(item) === HEAVY.LONGSWORD) {
+        await setLongswordState(item, {});
+      }
+      if (ident(item) === HEAVY.GUNLANCE) {
         await syncHeavyResource(item);
       }
     } catch (err) {
