@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.0
+ * Tem's Weapons v1.2.1
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -878,7 +878,7 @@ const HEAVY = {
   CHAKRAM:"tems-coral-teleport-chakram", JETHAMMER:"tems-gaunt-jet-hammer"
 };
 const ident = i => i?.system?.identifier;
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const heavyClamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 async function heavyUse(activity) {
   const item=activity?.item ?? activity?.parent; if(!item) return;
@@ -898,16 +898,16 @@ async function heavyUse(activity) {
   if(id===HEAVY.JETHAMMER){
     let f=Number(item.getFlag("world","temsJetFuel")??3);
     const cost=n==="Maximum Thrust"?2:(["Jet Smash","Jet Launch"].includes(n)?1:0);
-    if(cost) await item.setFlag("world","temsJetFuel",clamp(f-cost,0,3));
+    if(cost) await item.setFlag("world","temsJetFuel",heavyClamp(f-cost,0,3));
     if(n==="Vent / Refuel") await item.setFlag("world","temsJetFuel",3);
   }
   if(id===HEAVY.LONGSWORD){
     let sp=Number(item.getFlag("world","temsLongswordSpirit")??0);
-    if(n==="Spirit Slash") await item.setFlag("world","temsLongswordSpirit",clamp(sp-20,0,100));
-    if(n==="Spirit Roundslash") await item.setFlag("world","temsLongswordSpirit",clamp(sp-30,0,100));
+    if(n==="Spirit Slash") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp-20,0,100));
+    if(n==="Spirit Roundslash") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp-30,0,100));
     if(n==="Spirit Helm Breaker"){
       const lv=Number(item.getFlag("world","temsLongswordLevel")??0);
-      await item.setFlag("world","temsLongswordLevel",clamp(lv-1,0,3));
+      await item.setFlag("world","temsLongswordLevel",heavyClamp(lv-1,0,3));
     }
   }
   if(id===HEAVY.GUNHEELS && n==="Dodge Offset"){
@@ -949,16 +949,16 @@ Hooks.on("dnd5e.postRollAttack", async (activity, roll) => {
 
   if(ident(item)===HEAVY.LONGSWORD){
     let sp=Number(item.getFlag("world","temsLongswordSpirit")??0);
-    if(activity.name==="Overhead Slash") await item.setFlag("world","temsLongswordSpirit",clamp(sp+20,0,100));
-    if(activity.name==="Thrust") await item.setFlag("world","temsLongswordSpirit",clamp(sp+15,0,100));
+    if(activity.name==="Overhead Slash") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp+20,0,100));
+    if(activity.name==="Thrust") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp+15,0,100));
     if(activity.name==="Spirit Roundslash"){
       const lv=Number(item.getFlag("world","temsLongswordLevel")??0);
-      await item.setFlag("world","temsLongswordLevel",clamp(lv+1,0,3));
+      await item.setFlag("world","temsLongswordLevel",heavyClamp(lv+1,0,3));
     }
   }
   if(ident(item)===HEAVY.GUNHEELS && ["Pistol Barrage","Heel Shot","Afterburner Kick"].includes(activity.name)){
     const c=Number(item.getFlag("world","temsGunheelsCombo")??0);
-    await item.setFlag("world","temsGunheelsCombo",clamp(c+1,0,3));
+    await item.setFlag("world","temsGunheelsCombo",heavyClamp(c+1,0,3));
   }
   if(ident(item)===HEAVY.GUNHEELS && activity.name==="Bullet Climax") await item.setFlag("world","temsGunheelsCombo",0);
 });

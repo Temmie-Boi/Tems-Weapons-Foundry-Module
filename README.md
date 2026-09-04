@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.0
+# Tem's Weapons v1.2.1
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -86,3 +86,7 @@ The bundled item and its activities use the matching icon.
 
 ## v1.2.0 Mechanic-heavy batch
 Adds Teleportation Chakram, Harpoon, Meteor Hammer/Censer, Jet Hammer, Cane Sword/Rifle, Gunheels/Pistols, Longsword, and Gunlance. Also removes the duplicate Dual Blades Demon Mode update hook that caused the ActiveEffect deletion race.
+
+
+## v1.2.1 hotfix
+Fixes a duplicate JavaScript helper declaration that prevented the module script from loading, so the mechanic-heavy bundled weapons now import on GM ready.
