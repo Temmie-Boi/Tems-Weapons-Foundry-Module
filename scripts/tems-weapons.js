@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.7
+ * Tem's Weapons v1.2.8
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -800,77 +800,61 @@ async function syncSwordShieldGuard(item) {
   }]);
 }
 
-async function syncDemonMode(item) {
+async function applyDualBladeMode(item, active) {
   if (!hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) return;
-
   const actor = item.actor;
   if (!actor) return;
 
-  const active = Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
+  // Purge every Demon Mode effect from this weapon before applying requested state.
+  const ids = actor.effects
+    .filter(e =>
+      e.name === DEMON_EFFECT &&
+      (
+        e.getFlag("tems-weapons", "sourceItemId") === item.id ||
+        e.origin === item.uuid
+      )
+    )
+    .map(e => e.id)
+    .filter(Boolean);
 
-  // Remove EVERY stale/duplicate Demon Mode effect originating from this weapon.
-  const matching = actor.effects.filter(e =>
-    e.name === DEMON_EFFECT &&
-    e.getFlag("tems-weapons", "sourceItemId") === item.id
-  );
-
-  if (matching.length) {
-    const ids = matching.map(e => e.id).filter(Boolean);
-    if (ids.length) {
-      try {
-        await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
-      } catch (err) {
-        console.warn("Tem's Weapons | Demon Mode cleanup had a deletion race", err);
-      }
+  if (ids.length) {
+    try {
+      await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+    } catch (err) {
+      console.warn("Tem's Weapons | Dual Blades effect cleanup race", err);
     }
   }
 
-  // OFF means cleanly OFF: no effect remains.
-  if (!active) {
-    if (Boolean(item.getFlag("world", "temsDualBladesDemonMode"))) {
-      await item.setFlag("world", "temsDualBladesDemonMode", false);
-    }
-    if (actor.sheet?.rendered) actor.sheet.render({force:true});
-    return;
-  }
-
-  // ON means exactly ONE fresh ActiveEffect.
-  const effectData = {
-    name: DEMON_EFFECT,
-    img: item.img,
-    origin: item.uuid,
-    disabled: false,
-    transfer: false,
-    flags: {
-      "tems-weapons": {
-        sourceItemId: item.id
-      }
-    },
-    changes: [
-      {
-        key: "system.attributes.ac.bonus",
-        mode: CONST.ACTIVE_EFFECT_MODES.ADD,
-        value: "-2",
-        priority: 20
+  if (active) {
+    await actor.createEmbeddedDocuments("ActiveEffect", [{
+      name: DEMON_EFFECT,
+      img: item.img,
+      origin: item.uuid,
+      disabled: false,
+      transfer: false,
+      flags: {
+        "tems-weapons": {sourceItemId: item.id}
       },
-      {
-        key: "system.attributes.movement.walk",
-        mode: CONST.ACTIVE_EFFECT_MODES.ADD,
-        value: "10",
-        priority: 20
-      }
-    ]
-  };
-
-  await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
-
-  const nowActive = actor.effects.some(e =>
-    e.name === DEMON_EFFECT &&
-    e.getFlag("tems-weapons", "sourceItemId") === item.id
-  );
-  if (Boolean(item.getFlag("world", "temsDualBladesDemonMode")) !== nowActive) {
-    await item.setFlag("world", "temsDualBladesDemonMode", nowActive);
+      changes: [
+        {
+          key: "system.attributes.ac.bonus",
+          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          value: "-2",
+          priority: 20
+        },
+        {
+          key: "system.attributes.movement.walk",
+          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          value: "10",
+          priority: 20
+        }
+      ]
+    }]);
   }
+
+  // Set the logical state only after the actor effect operation succeeds.
+  await item.setFlag("world", "temsDualBladesDemonMode", Boolean(active));
+  await syncDualBladeDamage(item);
 
   if (actor.sheet?.rendered) actor.sheet.render({force:true});
 }
@@ -881,7 +865,13 @@ async function cleanAllDualBladeEffects(item) {
   if (!actor) return;
 
   const ids = actor.effects
-    .filter(e => e.name === DEMON_EFFECT)
+    .filter(e =>
+      e.name === DEMON_EFFECT &&
+      (
+        e.getFlag("tems-weapons", "sourceItemId") === item.id ||
+        e.origin === item.uuid
+      )
+    )
     .map(e => e.id)
     .filter(Boolean);
 
@@ -936,26 +926,14 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
   if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES) && activity.name === "Demon Mode") {
     if (dualToggleGuarded(item)) return;
 
-    const actor = item.actor;
-    if (!actor) return;
+    const current = Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
+    const next = !current;
 
-    const effectActive = actor.effects.some(e =>
-      e.name === DEMON_EFFECT &&
-      e.getFlag("tems-weapons", "sourceItemId") === item.id
-    );
-
-    // Reality is authoritative:
-    // effect exists -> turn OFF
-    // no effect -> turn ON
-    const active = !effectActive;
-
-    await item.setFlag("world", "temsDualBladesDemonMode", active);
-    await syncDemonMode(item);
-    await syncDualBladeDamage(item);
+    await applyDualBladeMode(item, next);
 
     ui.notifications.info(
-      `Dual Blades: Demon Mode ${active ? "ON" : "OFF"} — ` +
-      `${active ? "+10 ft movement, -2 AC, Second Blade +1d6" : "normal movement/AC/damage"}.`
+      `Dual Blades: Demon Mode ${next ? "ON" : "OFF"} — ` +
+      `${next ? "+10 ft movement, -2 AC, Second Blade +1d6" : "normal movement/AC/damage"}.`
     );
   }
 });
@@ -1053,18 +1031,18 @@ async function syncHeavyResource(item) {
 }
 
 
-async function setJetFuel(item, value) {
+async function setJetFuel(item, value, {notify=true}={}) {
   const fuel = heavyClamp(Number(value) || 0, 0, 3);
   await item.update({
     "flags.world.temsJetFuel": fuel,
     "system.uses.max": "3",
     "system.uses.spent": 3 - fuel
   });
-  ui.notifications.info(`Jet Hammer — Fuel ${fuel}/3`);
+  if (notify) ui.notifications.info(`Jet Hammer — Fuel ${fuel}/3`);
   return fuel;
 }
 
-async function setLongswordState(item, {spirit=null, level=null}={}) {
+async function setLongswordState(item, {spirit=null, level=null, notify=true}={}) {
   const updates = {};
   let nextSpirit = spirit === null
     ? heavyClamp(Number(item.getFlag("world","temsLongswordSpirit") ?? 0), 0, 100)
@@ -1079,9 +1057,11 @@ async function setLongswordState(item, {spirit=null, level=null}={}) {
   updates["system.uses.spent"] = 100 - nextSpirit;
 
   await item.update(updates);
-  ui.notifications.info(
-    `Longsword — Spirit ${nextSpirit}/100 | Level ${spiritLevelName(nextLevel)}`
-  );
+  if (notify) {
+    ui.notifications.info(
+      `Longsword — Spirit ${nextSpirit}/100 | Level ${spiritLevelName(nextLevel)}`
+    );
+  }
   return {spirit:nextSpirit, level:nextLevel};
 }
 
@@ -1556,17 +1536,16 @@ Hooks.once("ready", async () => {
       try {
         if (hasIdentifier(item, TEMS_IDS.SWORD_SHIELD)) await syncSwordShieldGuard(item);
         if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) {
-          // Purge every stale/stacked legacy effect, then establish a clean OFF state.
           await cleanAllDualBladeEffects(item);
           await item.setFlag("world", "temsDualBladesDemonMode", false);
           await syncDualBladeDamage(item);
         }
         if (ident(item) === HEAVY.CANE) await syncCaneVisibility(item);
         if (ident(item) === HEAVY.JETHAMMER) {
-          await setJetFuel(item, Number(item.getFlag("world","temsJetFuel") ?? 3));
+          await setJetFuel(item, Number(item.getFlag("world","temsJetFuel") ?? 3), {notify:false});
         }
         if (ident(item) === HEAVY.LONGSWORD) {
-          await setLongswordState(item, {});
+          await setLongswordState(item, {notify:false});
         }
         if (ident(item) === HEAVY.GUNLANCE) {
           await syncHeavyResource(item);
@@ -1586,10 +1565,10 @@ Hooks.once("ready", async () => {
       }
       if (ident(item) === HEAVY.CANE) await syncCaneVisibility(item);
       if (ident(item) === HEAVY.JETHAMMER) {
-        await setJetFuel(item, Number(item.getFlag("world","temsJetFuel") ?? 3));
+        await setJetFuel(item, Number(item.getFlag("world","temsJetFuel") ?? 3), {notify:false});
       }
       if (ident(item) === HEAVY.LONGSWORD) {
-        await setLongswordState(item, {});
+        await setLongswordState(item, {notify:false});
       }
       if (ident(item) === HEAVY.GUNLANCE) {
         await syncHeavyResource(item);

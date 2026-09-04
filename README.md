@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.7
+# Tem's Weapons v1.2.8
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -139,3 +139,12 @@ Fixes a duplicate JavaScript helper declaration that prevented the module script
 - If the effect exists, the next press turns Demon Mode OFF.
 - If no effect exists, the next press turns Demon Mode ON.
 - The stored flag is synchronized afterward to mirror the actual effect state.
+
+## v1.2.8 startup silence + Dual Blades rewrite
+
+- Jet Hammer and Longsword migration/synchronization no longer emit notifications on world startup.
+- Dual Blades Demon Mode toggle logic was rewritten rather than further patched.
+- Startup only cleans legacy effects and establishes a silent OFF state.
+- Each Demon Mode use explicitly flips OFF->ON or ON->OFF once.
+- Applying the mode first removes every legacy effect from the weapon, then creates exactly one effect when ON.
+- AC, movement, stored state, and Second Blade damage are synchronized from the requested boolean state.
