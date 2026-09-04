@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.4
+ * Tem's Weapons v1.2.5
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -742,6 +742,20 @@ const TEMS_IDS = Object.freeze({
 const SNS_AC_EFFECT = "Tem's Weapons — Sword & Shield Guard";
 const DEMON_EFFECT = "Tem's Weapons — Demon Mode";
 
+const DUAL_TOGGLE_GUARD = new Map();
+
+function dualToggleGuarded(item) {
+  const now = Date.now();
+  const last = Number(DUAL_TOGGLE_GUARD.get(item.uuid) ?? 0);
+  if (now - last < 750) return true;
+  DUAL_TOGGLE_GUARD.set(item.uuid, now);
+  setTimeout(() => {
+    if (DUAL_TOGGLE_GUARD.get(item.uuid) === now) DUAL_TOGGLE_GUARD.delete(item.uuid);
+  }, 1000);
+  return false;
+}
+
+
 function hasIdentifier(item, identifier) {
   return item?.type === "weapon" && item?.system?.identifier === identifier;
 }
@@ -872,6 +886,10 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
   if (!item) return;
 
   if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES) && activity.name === "Demon Mode") {
+    // D&D5e can revisit the same activity workflow more than once.
+    // Ignore duplicate callbacks from the same button press.
+    if (dualToggleGuarded(item)) return;
+
     const current = Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
     const active = !current;
 

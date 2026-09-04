@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.4
+# Tem's Weapons v1.2.5
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -117,3 +117,9 @@ Fixes a duplicate JavaScript helper declaration that prevented the module script
 - Longsword uses the same correct `dnd5e.postRollAttack(rolls, data)` hit-confirmation pattern as Charge Blade.
 - Longsword state and its visible 0–100 indicator are updated together.
 - Dual Blades now resets to a known Demon Mode OFF state on world load and toggles only from its authoritative stored state.
+
+## v1.2.5 Dual Blades toggle debounce
+
+- Demon Mode now ignores duplicate D&D5e activity callbacks from the same button press.
+- One button press can only toggle Demon Mode once.
+- This fixes the first-press no-op / second-press inverted-state behavior.
