@@ -2,7 +2,7 @@
   "id": "tems-weapons",
   "title": "Tem's Weapons",
   "description": "Tem's custom D&D5e weapon library and automation: Charge Blade plus Coral, Gaunt, Fault, Candy, and STARS weapon batches.",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "compatibility": {
     "minimum": "14",
     "verified": "14"

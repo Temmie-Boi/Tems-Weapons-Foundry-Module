@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.5
+# Tem's Weapons v1.2.6
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -123,3 +123,11 @@ Fixes a duplicate JavaScript helper declaration that prevented the module script
 - Demon Mode now ignores duplicate D&D5e activity callbacks from the same button press.
 - One button press can only toggle Demon Mode once.
 - This fixes the first-press no-op / second-press inverted-state behavior.
+
+## v1.2.6 Dual Blades ActiveEffect cleanup
+
+- Demon Mode now removes all stale/duplicate effects before creating a new one.
+- Turning Demon Mode OFF removes every effect tied to that Dual Blades item.
+- Turning Demon Mode ON creates exactly one `-2 AC / +10 ft movement` effect.
+- World load cleanup purges legacy stacked Demon Mode effects and initializes the weapon OFF.
+- Prevents AC from stacking downward across repeated activations.

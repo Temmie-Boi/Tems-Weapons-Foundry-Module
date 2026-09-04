@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.5
+ * Tem's Weapons v1.2.6
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -801,28 +801,48 @@ async function syncSwordShieldGuard(item) {
 }
 
 async function syncDemonMode(item) {
-  if (!hasIdentifier(item, TEMS_IDS.DUAL_BLADES) || !item.actor) return;
+  if (!hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) return;
 
   const actor = item.actor;
+  if (!actor) return;
+
   const active = Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
-  const existing = actor.effects.filter(e =>
+
+  // Remove EVERY stale/duplicate Demon Mode effect originating from this weapon.
+  const matching = actor.effects.filter(e =>
     e.name === DEMON_EFFECT &&
     e.getFlag("tems-weapons", "sourceItemId") === item.id
   );
 
-  for (const effect of existing) {
-    try { await effect.delete(); } catch {}
+  if (matching.length) {
+    const ids = matching.map(e => e.id).filter(Boolean);
+    if (ids.length) {
+      try {
+        await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+      } catch (err) {
+        console.warn("Tem's Weapons | Demon Mode cleanup had a deletion race", err);
+      }
+    }
   }
 
-  if (!active) return;
+  // OFF means cleanly OFF: no effect remains.
+  if (!active) {
+    if (actor.sheet?.rendered) actor.sheet.render({force:true});
+    return;
+  }
 
-  await actor.createEmbeddedDocuments("ActiveEffect", [{
+  // ON means exactly ONE fresh ActiveEffect.
+  const effectData = {
     name: DEMON_EFFECT,
     img: item.img,
     origin: item.uuid,
-    transfer: false,
     disabled: false,
-    duration: {},
+    transfer: false,
+    flags: {
+      "tems-weapons": {
+        sourceItemId: item.id
+      }
+    },
     changes: [
       {
         key: "system.attributes.ac.bonus",
@@ -836,15 +856,32 @@ async function syncDemonMode(item) {
         value: "10",
         priority: 20
       }
-    ],
-    flags: {
-      "tems-weapons": {
-        sourceItemId: item.id
-      }
-    }
-  }]);
+    ]
+  };
+
+  await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+
+  if (actor.sheet?.rendered) actor.sheet.render({force:true});
 }
 
+async function cleanAllDualBladeEffects(item) {
+  if (!hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) return;
+  const actor = item.actor;
+  if (!actor) return;
+
+  const ids = actor.effects
+    .filter(e => e.name === DEMON_EFFECT)
+    .map(e => e.id)
+    .filter(Boolean);
+
+  if (!ids.length) return;
+
+  try {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", ids);
+  } catch (err) {
+    console.warn("Tem's Weapons | Startup Demon Mode cleanup had a deletion race", err);
+  }
+}
 
 async function syncDualBladeDamage(item) {
   if (!hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) return;
@@ -1500,9 +1537,9 @@ Hooks.once("ready", async () => {
       try {
         if (hasIdentifier(item, TEMS_IDS.SWORD_SHIELD)) await syncSwordShieldGuard(item);
         if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) {
-          // Normalize legacy/inverted state to a known clean OFF state on world load.
+          // Purge every stale/stacked legacy effect, then establish a clean OFF state.
+          await cleanAllDualBladeEffects(item);
           await item.setFlag("world", "temsDualBladesDemonMode", false);
-          await syncDemonMode(item);
           await syncDualBladeDamage(item);
         }
         if (ident(item) === HEAVY.CANE) await syncCaneVisibility(item);
