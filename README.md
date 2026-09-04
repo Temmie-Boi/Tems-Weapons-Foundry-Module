@@ -1,32 +1,75 @@
-# Tem's Weapons v1.0.0
+# Tem's Weapons v1.1.0
 
-For Foundry VTT v14 / D&D5e 5.3.x.
+Foundry VTT v14 / D&D5e 5.3.x
 
-## Install
+## Included weapons
+
+Tem's weapons
+- Charge Blade
+- Coral
+  - Greatsword
+- Gaunt
+  - Bombs
+- Fault
+  - Sniper Rifle
+  - Twin Scimitars
+- Candy
+  - Electrified Javelin
+- STARS
+  - Sword & Shield
+  - Dual Blades
+
+## Installation
 
 1. Shut down Foundry.
-2. Remove or disable the old `charge-blade-automation` module so both automation modules do not run at once.
-3. Extract the `tems-weapons` folder into `Data/modules/`.
-4. Start Foundry and enable **Tem's Weapons** in Manage Modules.
-5. Enter the world as a GM.
+2. Replace the existing `Data/modules/tems-weapons/` folder with this version.
+3. Start Foundry and enable **Tem's Weapons**.
+4. Enter the world as a GM.
 
-On first load, the module creates an Item folder named **Tem's weapons** and imports the bundled **Charge Blade** into it.
+The module automatically creates missing folders and bundled weapon items. Existing bundled
+weapons are detected by stable identifier and are not duplicated.
 
-The import is idempotent: if a Charge Blade with identifier `charge-blade` already exists inside that folder, it will not create another one on later starts.
+## Straightforward batch mechanics
 
-## Included
+### Coral — Greatsword
+- Greatsword Slash: 2d6 slashing.
+- Charged Slash: 4d6 slashing; intended only when the wielder has not moved before the attack.
+- Shoulder Tackle: reaction, roll 1d8 + STR modifier to reduce incoming physical damage.
 
-- Charge Blade Automation v2.1.1 behavior
-- Charge Blade v2 weapon data with the short chat description fix
-- Custom Charge Blade icon at `modules/tems-weapons/assets/charge-blade.png`
-- Automatic world-folder/import setup
+### Gaunt — Bombs
+- Bomb Pouch: 3 item uses.
+- Throw Bomb: 2d6 fire, 10-ft blast, Dexterity save described on the activity.
+- Prime Bomb: bonus-action setup.
+- Throw Primed Bomb: 3d6 fire, 15-ft blast.
+- Bomb activities consume one item use when D&D5e consumption is available.
 
-## Important
+### Fault — Sniper Rifle
+- 2d10 piercing, range 150/600.
+- Take Aim: bonus-action tactical activity; advantage/cover are currently applied by the player.
+- Headshot: critical hits add an extra 2d10 automatically through the attack activity.
 
-The old `charge-blade-automation` module and this module should not both be enabled. They would both listen to the same D&D5e hooks and could process the Charge Blade twice.
+### Fault — Twin Scimitars
+- Two 1d6 slashing attacks.
+- Crosscut Bonus: explicit 1d6 roll used once per turn if both attacks hit the same target.
 
+### Candy — Electrified Javelin
+- 1d6 piercing + 1d6 lightning, range 30/120.
+- Overcharged Throw includes the Constitution-save / no-reactions rider in its chat instructions.
 
-## v1.0.1
+### STARS — Sword & Shield
+- Sword Slash: 1d8 slashing.
+- Equipped weapon automatically grants +2 AC.
+- Shield Bash: bonus-action 1d4 bludgeoning with the 5-ft push rider described in chat.
 
-Fixed the Charge Blade item sheet opening itself whenever an activity changed weapon state.
-The module now refreshes item/actor sheets only when those sheets are already open.
+### STARS — Dual Blades
+- Flurry uses two explicit 1d6 slashing attacks.
+- Demon Mode is a bonus-action toggle.
+- Demon Mode automatically gives +10 ft walking speed and -2 AC.
+- While Demon Mode is active, damage from Flurry — Second Blade automatically rolls +1d6 slashing.
+
+## Notes
+
+The module automates bookkeeping where the rules are unambiguous. Tactical conditions such as
+"did not move before Charged Slash", Take Aim's positioning requirement, both scimitars hitting
+the same target, and save riders remain explicit activities/instructions rather than hidden
+automatic decisions.

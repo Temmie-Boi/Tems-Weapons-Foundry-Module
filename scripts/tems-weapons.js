@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.0.1
+ * Tem's Weapons v1.1.0
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -723,52 +723,240 @@ function installChargeBladeItemUseWrapper() {
   console.log("Tem's Weapons | Item.use chooser pre-sync installed.");
 }
 
+
+/* ------------------------------------------------------------------------- */
+/* STRAIGHTFORWARD WEAPON AUTOMATION                                         */
+/* ------------------------------------------------------------------------- */
+
+const TEMS_IDS = Object.freeze({
+  SWORD_SHIELD: "tems-stars-sword-shield",
+  DUAL_BLADES: "tems-stars-dual-blades"
+});
+
+const SNS_AC_EFFECT = "Tem's Weapons — Sword & Shield Guard";
+const DEMON_EFFECT = "Tem's Weapons — Demon Mode";
+
+function hasIdentifier(item, identifier) {
+  return item?.type === "weapon" && item?.system?.identifier === identifier;
+}
+
+async function syncSwordShieldGuard(item) {
+  if (!hasIdentifier(item, TEMS_IDS.SWORD_SHIELD) || !item.actor) return;
+
+  const actor = item.actor;
+  const equipped = Boolean(item.system.equipped);
+  const existing = actor.effects.filter(e =>
+    e.name === SNS_AC_EFFECT &&
+    e.getFlag("tems-weapons", "sourceItemId") === item.id
+  );
+
+  if (!equipped) {
+    for (const effect of existing) {
+      try { await effect.delete(); } catch {}
+    }
+    return;
+  }
+
+  if (existing.length) return;
+
+  await actor.createEmbeddedDocuments("ActiveEffect", [{
+    name: SNS_AC_EFFECT,
+    img: item.img,
+    origin: item.uuid,
+    transfer: false,
+    disabled: false,
+    duration: {},
+    changes: [{
+      key: "system.attributes.ac.bonus",
+      mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+      value: "2",
+      priority: 20
+    }],
+    flags: {
+      "tems-weapons": {
+        sourceItemId: item.id
+      }
+    }
+  }]);
+}
+
+async function syncDemonMode(item) {
+  if (!hasIdentifier(item, TEMS_IDS.DUAL_BLADES) || !item.actor) return;
+
+  const actor = item.actor;
+  const active = Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
+  const existing = actor.effects.filter(e =>
+    e.name === DEMON_EFFECT &&
+    e.getFlag("tems-weapons", "sourceItemId") === item.id
+  );
+
+  for (const effect of existing) {
+    try { await effect.delete(); } catch {}
+  }
+
+  if (!active) return;
+
+  await actor.createEmbeddedDocuments("ActiveEffect", [{
+    name: DEMON_EFFECT,
+    img: item.img,
+    origin: item.uuid,
+    transfer: false,
+    disabled: false,
+    duration: {},
+    changes: [
+      {
+        key: "system.attributes.ac.bonus",
+        mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+        value: "-2",
+        priority: 20
+      },
+      {
+        key: "system.attributes.movement.walk",
+        mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+        value: "10",
+        priority: 20
+      }
+    ],
+    flags: {
+      "tems-weapons": {
+        sourceItemId: item.id
+      }
+    }
+  }]);
+}
+
+Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
+  const item = activity?.item ?? activity?.parent;
+  if (!item) return;
+
+  if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES) && activity.name === "Demon Mode") {
+    const active = !Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
+    await item.setFlag("world", "temsDualBladesDemonMode", active);
+    await syncDemonMode(item);
+    ui.notifications.info(`Dual Blades: Demon Mode ${active ? "ON" : "OFF"}.`);
+  }
+});
+
+Hooks.on("dnd5e.rollDamage", async (rolls, data) => {
+  const activity = data?.subject;
+  const item = activity?.item ?? activity?.parent;
+  if (!item || !hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) return;
+
+  if (activity?.name !== "Flurry — Second Blade") return;
+  if (!Boolean(item.getFlag("world", "temsDualBladesDemonMode"))) return;
+
+  const actor = item.actor;
+  const roll = await new CONFIG.Dice.DamageRoll(
+    "1d6",
+    actor?.getRollData?.() ?? {},
+    {type: "slashing"}
+  ).evaluate();
+
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({actor}),
+    flavor: `${item.name} — Demon Mode Flurry Bonus`
+  });
+});
+
+Hooks.on("updateItem", async (item, changes) => {
+  if (hasIdentifier(item, TEMS_IDS.SWORD_SHIELD)) {
+    const flat = foundry.utils.flattenObject(changes ?? {});
+    if (Object.keys(flat).some(k => k.startsWith("system.equipped"))) {
+      await syncSwordShieldGuard(item);
+    }
+  }
+
+  if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) {
+    const flat = foundry.utils.flattenObject(changes ?? {});
+    if (Object.keys(flat).some(k => k.startsWith("flags.world.temsDualBladesDemonMode"))) {
+      await syncDemonMode(item);
+    }
+  }
+});
+
 /* ------------------------------------------------------------------------- */
 /* BUNDLED WEAPON INSTALLER                                                  */
 /* ------------------------------------------------------------------------- */
 
 const TEMS_FOLDER_NAME = "Tem's weapons";
-const BUNDLED_CHARGE_BLADE_PATH = "modules/tems-weapons/items/charge-blade.json";
 
-async function installBundledChargeBlade() {
-  // World document creation should only be performed by a GM.
-  if (!game.user.isGM) return;
+const BUNDLED_WEAPONS = [
+  { path: "items/charge-blade.json", identifier: "charge-blade", folder: null, icon: "assets/charge-blade.png" },
+  { path: "items/coral/greatsword.json", identifier: "tems-coral-greatsword", folder: "Coral" },
+  { path: "items/gaunt/bombs.json", identifier: "tems-gaunt-bombs", folder: "Gaunt" },
+  { path: "items/fault/sniper-rifle.json", identifier: "tems-fault-sniper-rifle", folder: "Fault" },
+  { path: "items/fault/twin-scimitars.json", identifier: "tems-fault-twin-scimitars", folder: "Fault" },
+  { path: "items/candy/electrified-javelin.json", identifier: "tems-candy-electrified-javelin", folder: "Candy" },
+  { path: "items/stars/sword-shield.json", identifier: "tems-stars-sword-shield", folder: "STARS" },
+  { path: "items/stars/dual-blades.json", identifier: "tems-stars-dual-blades", folder: "STARS" }
+];
 
-  let folder = game.folders.find(f => f.type === "Item" && f.name === TEMS_FOLDER_NAME);
+async function ensureItemFolder(name, parent=null) {
+  const parentId = parent?.id ?? null;
+  let folder = game.folders.find(f =>
+    f.type === "Item" &&
+    f.name === name &&
+    (f.folder?.id ?? null) === parentId
+  );
+
   if (!folder) {
     folder = await Folder.create({
-      name: TEMS_FOLDER_NAME,
+      name,
       type: "Item",
       sorting: "a",
-      folder: null
+      folder: parentId
     });
-    console.log(`Tem's Weapons | Created Item folder: ${TEMS_FOLDER_NAME}`);
+    console.log(`Tem's Weapons | Created Item folder: ${name}`);
   }
 
-  // Only treat a Charge Blade already inside our folder as the bundled copy.
-  // This lets an older/test Charge Blade elsewhere in the world coexist without
-  // causing a duplicate inside Tem's weapons every startup.
-  const existing = game.items.find(i =>
-    i.system?.identifier === IDENTIFIER && i.folder?.id === folder.id
-  );
-  if (existing) return existing;
+  return folder;
+}
 
-  try {
-    const response = await fetch(BUNDLED_CHARGE_BLADE_PATH);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+async function installBundledWeapons() {
+  if (!game.user.isGM) return;
 
-    const data = await response.json();
-    delete data._id;
-    data.folder = folder.id;
-    data.img = "modules/tems-weapons/assets/charge-blade.png";
+  const root = await ensureItemFolder(TEMS_FOLDER_NAME);
+  const subfolders = new Map();
 
-    const item = await Item.create(data);
-    console.log(`Tem's Weapons | Imported bundled Charge Blade into ${TEMS_FOLDER_NAME}`);
-    ui.notifications.info(`Tem's Weapons: Charge Blade added to ${TEMS_FOLDER_NAME}.`);
-    return item;
-  } catch (err) {
-    console.error("Tem's Weapons | Failed to import bundled Charge Blade", err);
-    ui.notifications.error("Tem's Weapons could not import the bundled Charge Blade. Check the console.");
+  for (const entry of BUNDLED_WEAPONS) {
+    let targetFolder = root;
+
+    if (entry.folder) {
+      if (!subfolders.has(entry.folder)) {
+        subfolders.set(entry.folder, await ensureItemFolder(entry.folder, root));
+      }
+      targetFolder = subfolders.get(entry.folder);
+    }
+
+    // Search the entire Tem's Weapons hierarchy by stable identifier.
+    const existing = game.items.find(i => {
+      if (i.system?.identifier !== entry.identifier) return false;
+      let f = i.folder;
+      while (f) {
+        if (f.id === root.id) return true;
+        f = f.folder;
+      }
+      return false;
+    });
+
+    if (existing) continue;
+
+    try {
+      const response = await fetch(`modules/tems-weapons/${entry.path}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const data = await response.json();
+      delete data._id;
+      data.folder = targetFolder.id;
+
+      if (entry.icon) data.img = `modules/tems-weapons/${entry.icon}`;
+
+      await Item.create(data);
+      console.log(`Tem's Weapons | Imported ${data.name} into ${targetFolder.name}`);
+    } catch (err) {
+      console.error(`Tem's Weapons | Failed to import ${entry.identifier}`, err);
+      ui.notifications.error(`Tem's Weapons could not import ${entry.identifier}. Check the console.`);
+    }
   }
 }
 
@@ -778,7 +966,19 @@ async function installBundledChargeBlade() {
 
 Hooks.once("ready", async () => {
   installChargeBladeItemUseWrapper();
-  await installBundledChargeBlade();
+  await installBundledWeapons();
+
+  // Sync straightforward weapon effects already embedded on actors.
+  for (const actor of game.actors) {
+    for (const item of actor.items) {
+      try {
+        if (hasIdentifier(item, TEMS_IDS.SWORD_SHIELD)) await syncSwordShieldGuard(item);
+        if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) await syncDemonMode(item);
+      } catch (err) {
+        console.warn("Tem's Weapons | Straightforward weapon initial sync failed", item, err);
+      }
+    }
+  }
 
   game.chargeBladeAutomation = {
     getState(item) {
