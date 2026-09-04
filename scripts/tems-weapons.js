@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.1.0
+ * Tem's Weapons v1.1.1
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -885,9 +885,9 @@ const BUNDLED_WEAPONS = [
   { path: "items/coral/greatsword.json", identifier: "tems-coral-greatsword", folder: "Coral" },
   { path: "items/gaunt/bombs.json", identifier: "tems-gaunt-bombs", folder: "Gaunt" },
   { path: "items/fault/sniper-rifle.json", identifier: "tems-fault-sniper-rifle", folder: "Fault" },
-  { path: "items/fault/twin-scimitars.json", identifier: "tems-fault-twin-scimitars", folder: "Fault" },
-  { path: "items/candy/electrified-javelin.json", identifier: "tems-candy-electrified-javelin", folder: "Candy" },
-  { path: "items/stars/sword-shield.json", identifier: "tems-stars-sword-shield", folder: "STARS" },
+  { path: "items/fault/twin-scimitars.json", identifier: "tems-fault-twin-scimitars", folder: "Fault", icon: "assets/twin-scimitars.png" },
+  { path: "items/candy/electrified-javelin.json", identifier: "tems-candy-electrified-javelin", folder: "Candy", icon: "assets/electrified-javelin.png" },
+  { path: "items/stars/sword-shield.json", identifier: "tems-stars-sword-shield", folder: "STARS", icon: "assets/sword-shield.png" },
   { path: "items/stars/dual-blades.json", identifier: "tems-stars-dual-blades", folder: "STARS" }
 ];
 

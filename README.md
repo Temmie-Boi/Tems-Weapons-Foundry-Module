@@ -1,4 +1,4 @@
-# Tem's Weapons v1.1.0
+# Tem's Weapons v1.1.1
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -73,3 +73,12 @@ The module automates bookkeeping where the rules are unambiguous. Tactical condi
 "did not move before Charged Slash", Take Aim's positioning requirement, both scimitars hitting
 the same target, and save riders remain explicit activities/instructions rather than hidden
 automatic decisions.
+
+## v1.1.1 icon update
+
+Added supplied custom icons for:
+- Fault — Twin Scimitars
+- Candy — Electrified Javelin
+- STARS — Sword & Shield
+
+The bundled item and its activities use the matching icon.

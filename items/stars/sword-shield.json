@@ -1,13 +1,13 @@
 {
   "name": "Sword & Shield",
   "type": "weapon",
-  "img": "systems/dnd5e/icons/svg/items/weapon.svg",
+  "img": "modules/tems-weapons/assets/sword-shield.png",
   "system": {
     "activities": {
       "CJuFYbrt51zN2Pa6": {
         "type": "attack",
         "_id": "CJuFYbrt51zN2Pa6",
-        "img": "",
+        "img": "modules/tems-weapons/assets/sword-shield.png",
         "sort": 100000,
         "activation": {
           "type": "action",
@@ -90,7 +90,7 @@
       "ZiiVQSxDl3XP18nl": {
         "type": "attack",
         "_id": "ZiiVQSxDl3XP18nl",
-        "img": "",
+        "img": "modules/tems-weapons/assets/sword-shield.png",
         "sort": 200000,
         "activation": {
           "type": "bonus",

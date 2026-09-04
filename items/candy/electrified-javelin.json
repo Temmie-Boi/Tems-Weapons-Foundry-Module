@@ -1,13 +1,13 @@
 {
   "name": "Electrified Javelin",
   "type": "weapon",
-  "img": "systems/dnd5e/icons/svg/items/weapon.svg",
+  "img": "modules/tems-weapons/assets/electrified-javelin.png",
   "system": {
     "activities": {
       "eZUM5ZqIRUZTt4Y3": {
         "type": "attack",
         "_id": "eZUM5ZqIRUZTt4Y3",
-        "img": "",
+        "img": "modules/tems-weapons/assets/electrified-javelin.png",
         "sort": 100000,
         "activation": {
           "type": "action",
@@ -124,7 +124,7 @@
       "mZc6nFRM9cFe6muw": {
         "type": "attack",
         "_id": "mZc6nFRM9cFe6muw",
-        "img": "",
+        "img": "modules/tems-weapons/assets/electrified-javelin.png",
         "sort": 200000,
         "activation": {
           "type": "action",

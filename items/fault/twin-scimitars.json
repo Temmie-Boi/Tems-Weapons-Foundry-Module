@@ -1,13 +1,13 @@
 {
   "name": "Twin Scimitars",
   "type": "weapon",
-  "img": "systems/dnd5e/icons/svg/items/weapon.svg",
+  "img": "modules/tems-weapons/assets/twin-scimitars.png",
   "system": {
     "activities": {
       "X3MKkD8BIvDYaoxa": {
         "type": "attack",
         "_id": "X3MKkD8BIvDYaoxa",
-        "img": "",
+        "img": "modules/tems-weapons/assets/twin-scimitars.png",
         "sort": 100000,
         "activation": {
           "type": "action",
@@ -90,7 +90,7 @@
       "HKojG9bMwhMEWC7f": {
         "type": "attack",
         "_id": "HKojG9bMwhMEWC7f",
-        "img": "",
+        "img": "modules/tems-weapons/assets/twin-scimitars.png",
         "sort": 200000,
         "activation": {
           "type": "action",
@@ -173,7 +173,7 @@
       "P0xnpSgNFi4fmJIK": {
         "type": "utility",
         "_id": "P0xnpSgNFi4fmJIK",
-        "img": "",
+        "img": "modules/tems-weapons/assets/twin-scimitars.png",
         "sort": 300000,
         "activation": {
           "type": "special",
