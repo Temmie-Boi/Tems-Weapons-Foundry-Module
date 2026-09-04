@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.1
+# Tem's Weapons v1.2.2
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -90,3 +90,14 @@ Adds Teleportation Chakram, Harpoon, Meteor Hammer/Censer, Jet Hammer, Cane Swor
 
 ## v1.2.1 hotfix
 Fixes a duplicate JavaScript helper declaration that prevented the module script from loading, so the mechanic-heavy bundled weapons now import on GM ready.
+
+## v1.2.2 mechanic-heavy stabilization
+
+- Harpoon Reel Target and Reel Self now physically move tokens 10 ft toward the other end of the tether.
+- Meteor Hammer/Censer automatically rolls a CON save after a confirmed hit and applies Dazed for 1 round on failure.
+- Jet Hammer Fuel is mirrored to the D&D5e item Uses counter and announced after fuel actions.
+- Longsword Spirit is mirrored to the item Uses counter; notifications show Spirit and White/Yellow/Red level.
+- Gunlance Shells are mirrored to the item Uses counter and announced after shell actions.
+- Cane Sword/Rifle now synchronizes native D&D5e activity visibility before the activity chooser opens.
+- Dual Blades Demon Mode now adds/removes a real 1d6 slashing damage part on Flurry — Second Blade instead of relying on a separate damage hook.
+- Existing world/actor items are migrated on GM ready; deletion/re-import should not be necessary.

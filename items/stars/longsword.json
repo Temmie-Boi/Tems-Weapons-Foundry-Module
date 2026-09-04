@@ -469,12 +469,12 @@
       }
     },
     "uses": {
-      "spent": 0,
+      "spent": 100,
       "recovery": [],
-      "max": ""
+      "max": "100"
     },
     "description": {
-      "value": "<h2>Longsword</h2><p>Monster Hunter-style Spirit Gauge. Normal attacks build Spirit. Spirit attacks spend it. Spirit Roundslash raises Spirit Level: White \u2192 Yellow \u2192 Red.</p>",
+      "value": "<h2>Longsword</h2><p>Monster Hunter-style Spirit Gauge. Normal attacks build Spirit. Spirit attacks spend it. Spirit Roundslash raises Spirit Level: White → Yellow → Red.</p>",
       "chat": "<p><strong>Longsword</strong></p>"
     },
     "identifier": "tems-stars-longsword",

@@ -458,7 +458,7 @@
     "uses": {
       "spent": 0,
       "recovery": [],
-      "max": ""
+      "max": "5"
     },
     "description": {
       "value": "<h2>Gunlance</h2><p>Lance attacks plus explosive shells. Tracks 5 shells. Shelling spends 1, Full Burst spends all loaded shells, Reload restores shells, and Wyvern's Fire has a cooldown.</p>",

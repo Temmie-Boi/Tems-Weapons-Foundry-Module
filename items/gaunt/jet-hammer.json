@@ -459,7 +459,7 @@
     "uses": {
       "spent": 0,
       "recovery": [],
-      "max": ""
+      "max": "3"
     },
     "description": {
       "value": "<h2>Jet Hammer</h2><p>A massive hammer driven by thrusters. Tracks 3 Fuel. Spend Fuel on boosted impacts or propulsion; Vent/Refuel restores it.</p>",

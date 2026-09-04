@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.1
+ * Tem's Weapons v1.2.2
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -703,12 +703,18 @@ function installChargeBladeItemUseWrapper() {
         await expireShieldIfNeeded(this);
         await syncSwordShieldAC(this);
         await syncActivityVisibility(this);
-
-        // Force the system data model to be prepared with the newly-written
-        // visibility values before original Item.use reads activity.canUse.
         this.prepareData?.();
       } catch (err) {
-        console.error("Tem's Weapons | Pre-use visibility sync failed", err);
+        console.error("Tem's Weapons | Charge Blade pre-use visibility sync failed", err);
+      }
+    }
+
+    if (this?.system?.identifier === "tems-fault-cane-rifle") {
+      try {
+        await syncCaneVisibility(this);
+        this.prepareData?.();
+      } catch (err) {
+        console.error("Tem's Weapons | Cane pre-use visibility sync failed", err);
       }
     }
 
@@ -825,6 +831,42 @@ async function syncDemonMode(item) {
   }]);
 }
 
+
+async function syncDualBladeDamage(item) {
+  if (!hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) return;
+
+  const active = Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
+  const activity = Array.from(item.system.activities ?? [])
+    .find(a => a.name === "Flurry — Second Blade");
+  if (!activity) return;
+
+  const desired = active ? [{
+    custom: {enabled: false, formula: ""},
+    number: 1,
+    denomination: 6,
+    bonus: "",
+    types: ["slashing"],
+    scaling: {number: 1}
+  }] : [];
+
+  const current = activity.damage?.parts ?? [];
+  const alreadyCorrect =
+    (!active && current.length === 0) ||
+    (active && current.length === 1 &&
+      Number(current[0]?.number) === 1 &&
+      Number(current[0]?.denomination) === 6 &&
+      current[0]?.types?.includes?.("slashing"));
+
+  if (alreadyCorrect) return;
+
+  await item.update({
+    [`system.activities.${activity.id}.damage.parts`]: desired
+  });
+
+  if (item.sheet?.rendered) item.sheet.render({force: true});
+  if (item.actor?.sheet?.rendered) item.actor.sheet.render({force: true});
+}
+
 Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
   const item = activity?.item ?? activity?.parent;
   if (!item) return;
@@ -833,29 +875,9 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
     const active = !Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
     await item.setFlag("world", "temsDualBladesDemonMode", active);
     await syncDemonMode(item);
-    ui.notifications.info(`Dual Blades: Demon Mode ${active ? "ON" : "OFF"}.`);
+    await syncDualBladeDamage(item);
+    ui.notifications.info(`Dual Blades: Demon Mode ${active ? "ON" : "OFF"} — Second Blade ${active ? "+1d6 slashing" : "normal damage"}.`);
   }
-});
-
-Hooks.on("dnd5e.rollDamage", async (rolls, data) => {
-  const activity = data?.subject;
-  const item = activity?.item ?? activity?.parent;
-  if (!item || !hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) return;
-
-  if (activity?.name !== "Flurry — Second Blade") return;
-  if (!Boolean(item.getFlag("world", "temsDualBladesDemonMode"))) return;
-
-  const actor = item.actor;
-  const roll = await new CONFIG.Dice.DamageRoll(
-    "1d6",
-    actor?.getRollData?.() ?? {},
-    {type: "slashing"}
-  ).evaluate();
-
-  await roll.toMessage({
-    speaker: ChatMessage.getSpeaker({actor}),
-    flavor: `${item.name} — Demon Mode Flurry Bonus`
-  });
 });
 
 Hooks.on("updateItem", async (item, changes) => {
@@ -880,27 +902,226 @@ const HEAVY = {
 const ident = i => i?.system?.identifier;
 const heavyClamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
+
+const HEAVY_VISIBILITY_LOCKS = new Set();
+
+function heavyActivity(item, name) {
+  return Array.from(item?.system?.activities ?? []).find(a => a.name === name);
+}
+
+function remainingUses(item) {
+  const max = Number(item?.system?.uses?.max || 0);
+  const spent = Number(item?.system?.uses?.spent || 0);
+  return Math.max(0, max - spent);
+}
+
+async function setVisibleActivity(activity, visible, updates) {
+  if (!activity) return;
+  const curMin = activity.visibility?.level?.min ?? null;
+  const curMax = activity.visibility?.level?.max ?? null;
+  const desiredMin = null;
+  const desiredMax = visible ? null : -1;
+  if (curMin !== desiredMin) updates[`system.activities.${activity.id}.visibility.level.min`] = desiredMin;
+  if (curMax !== desiredMax) updates[`system.activities.${activity.id}.visibility.level.max`] = desiredMax;
+}
+
+async function syncCaneVisibility(item) {
+  if (ident(item) !== HEAVY.CANE) return;
+  if (HEAVY_VISIBILITY_LOCKS.has(item.uuid)) return;
+  HEAVY_VISIBILITY_LOCKS.add(item.uuid);
+  try {
+    const mode = item.getFlag("world", "temsCaneMode") === "rifle" ? "rifle" : "sword";
+    const updates = {};
+    await setVisibleActivity(heavyActivity(item, "Cane Sword Slash"), mode === "sword", updates);
+    await setVisibleActivity(heavyActivity(item, "Cane Rifle Shot"), mode === "rifle", updates);
+    await setVisibleActivity(heavyActivity(item, "Transform"), true, updates);
+    if (Object.keys(updates).length) await item.update(updates);
+    item.prepareData?.();
+    if (item.sheet?.rendered) item.sheet.render({force:true});
+    if (item.actor?.sheet?.rendered) item.actor.sheet.render({force:true});
+  } finally {
+    HEAVY_VISIBILITY_LOCKS.delete(item.uuid);
+  }
+}
+
+async function syncHeavyResource(item) {
+  const id = ident(item);
+
+  if (id === HEAVY.JETHAMMER) {
+    const fuel = heavyClamp(Number(item.getFlag("world","temsJetFuel") ?? 3), 0, 3);
+    const spent = 3 - fuel;
+    if (String(item.system.uses?.max ?? "") !== "3" || Number(item.system.uses?.spent ?? -1) !== spent) {
+      await item.update({"system.uses.max":"3", "system.uses.spent":spent});
+    }
+  }
+
+  if (id === HEAVY.GUNLANCE) {
+    const shells = heavyClamp(Number(item.getFlag("world","temsGunlanceShells") ?? 5), 0, 5);
+    const spent = 5 - shells;
+    if (String(item.system.uses?.max ?? "") !== "5" || Number(item.system.uses?.spent ?? -1) !== spent) {
+      await item.update({"system.uses.max":"5", "system.uses.spent":spent});
+    }
+  }
+
+  if (id === HEAVY.LONGSWORD) {
+    const spirit = heavyClamp(Number(item.getFlag("world","temsLongswordSpirit") ?? 0), 0, 100);
+    const spent = 100 - spirit;
+    if (String(item.system.uses?.max ?? "") !== "100" || Number(item.system.uses?.spent ?? -1) !== spent) {
+      await item.update({"system.uses.max":"100", "system.uses.spent":spent});
+    }
+  }
+}
+
+function spiritLevelName(level) {
+  return ["None", "White", "Yellow", "Red"][heavyClamp(Number(level)||0,0,3)];
+}
+
+function notifyHeavyResource(item) {
+  const id = ident(item);
+  if (id === HEAVY.JETHAMMER) {
+    ui.notifications.info(`Jet Hammer — Fuel ${item.getFlag("world","temsJetFuel") ?? 3}/3`);
+  } else if (id === HEAVY.GUNLANCE) {
+    const ready = Boolean(item.getFlag("world","temsGunlanceWyvernReady") ?? true);
+    ui.notifications.info(`Gunlance — Shells ${item.getFlag("world","temsGunlanceShells") ?? 5}/5 | Wyvern's Fire ${ready ? "READY" : "COOLDOWN"}`);
+  } else if (id === HEAVY.LONGSWORD) {
+    const spirit = item.getFlag("world","temsLongswordSpirit") ?? 0;
+    const level = item.getFlag("world","temsLongswordLevel") ?? 0;
+    ui.notifications.info(`Longsword — Spirit ${spirit}/100 | Level ${spiritLevelName(level)}`);
+  }
+}
+
+function tokenCenter(doc) {
+  const size = canvas.grid.size;
+  const w = (doc.width ?? 1) * size;
+  const h = (doc.height ?? 1) * size;
+  return {x: doc.x + w/2, y: doc.y + h/2};
+}
+
+async function moveTokenToward(mover, destination, feet) {
+  if (!mover || !destination || !canvas?.scene) return false;
+  const a = tokenCenter(mover);
+  const b = tokenCenter(destination);
+  const dx = b.x-a.x, dy=b.y-a.y;
+  const pxDist = Math.hypot(dx,dy);
+  if (!pxDist) return true;
+
+  const gridDistance = Number(canvas.scene.grid.distance || 5);
+  const pixelsPerGrid = Number(canvas.grid.size || 100);
+  const requestedPx = (Number(feet) / gridDistance) * pixelsPerGrid;
+  const movePx = Math.min(requestedPx, pxDist);
+  const ratio = movePx / pxDist;
+
+  await mover.update({
+    x: Math.round(mover.x + dx*ratio),
+    y: Math.round(mover.y + dy*ratio)
+  }, {animate:true});
+  return true;
+}
+
+async function resolveHarpoonTarget(item) {
+  const uuid = item.getFlag("world","temsHarpoonTarget");
+  if (!uuid) return null;
+  try {
+    const doc = await fromUuid(uuid);
+    return doc?.documentName === "Token" ? doc : (doc?.document ?? null);
+  } catch {
+    return null;
+  }
+}
+
+function weaponSaveDC(item) {
+  const actor = item?.actor;
+  if (!actor) return 10;
+  const prof = Number(actor.system?.attributes?.prof ?? actor.system?.attributes?.proficiency ?? 2);
+  const str = Number(actor.system?.abilities?.str?.mod ?? 0);
+  return 8 + prof + str;
+}
+
+async function rollConSaveAndDaze(item, targetToken) {
+  const actor = targetToken?.actor;
+  if (!actor) return;
+
+  const dc = weaponSaveDC(item);
+  const con = actor.system?.abilities?.con ?? {};
+  const saveBonus = Number(con.save ?? con.mod ?? 0);
+
+  const roll = await new Roll("1d20 + @bonus", {bonus: saveBonus}).evaluate();
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({actor}),
+    flavor: `${item.name} — CON Save vs Daze (DC ${dc})`
+  });
+
+  if (roll.total >= dc) {
+    ui.notifications.info(`${targetToken.name} resisted Dazed (${roll.total} vs DC ${dc}).`);
+    return;
+  }
+
+  const dazedStatus = (CONFIG.statusEffects ?? []).find(s =>
+    String(s.id ?? "").toLowerCase() === "dazed" ||
+    String(s.name ?? "").toLowerCase() === "dazed"
+  );
+
+  const effectData = {
+    name: "Dazed",
+    img: dazedStatus?.img ?? "icons/svg/daze.svg",
+    origin: item.uuid,
+    disabled: false,
+    transfer: false,
+    duration: {rounds: 1, seconds: 6},
+    changes: []
+  };
+  if (dazedStatus?.id) effectData.statuses = [dazedStatus.id];
+
+  await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+  ui.notifications.warn(`${targetToken.name} failed the CON save and is Dazed.`);
+}
+
 async function heavyUse(activity) {
   const item=activity?.item ?? activity?.parent; if(!item) return;
   const id=ident(item), n=activity.name, actor=item.actor;
 
   if(id===HEAVY.CANE && n==="Transform"){
     const m=item.getFlag("world","temsCaneMode")==="rifle"?"sword":"rifle";
-    await item.setFlag("world","temsCaneMode",m); ui.notifications.info(`Cane weapon: ${m.toUpperCase()} mode.`);
+    await item.setFlag("world","temsCaneMode",m);
+    await syncCaneVisibility(item);
+    ui.notifications.info(`Cane weapon: ${m.toUpperCase()} mode.`);
   }
+
   if(id===HEAVY.GUNLANCE){
     let sh=Number(item.getFlag("world","temsGunlanceShells")??5);
-    if(n==="Reload"){ await item.setFlag("world","temsGunlanceShells",5); ui.notifications.info("Gunlance reloaded: 5 shells."); }
-    if(n==="Shelling" && sh>0){ await item.setFlag("world","temsGunlanceShells",sh-1); }
-    if(n==="Full Burst" && sh>0){ await item.setFlag("world","temsGunlanceShells",0); }
-    if(n==="Wyvern's Fire"){ await item.setFlag("world","temsGunlanceWyvernReady",false); }
+    if(n==="Reload"){
+      await item.setFlag("world","temsGunlanceShells",5);
+    }
+    if(n==="Shelling"){
+      if(sh <= 0) ui.notifications.warn("Gunlance — no shells loaded.");
+      else await item.setFlag("world","temsGunlanceShells",sh-1);
+    }
+    if(n==="Full Burst"){
+      if(sh <= 0) ui.notifications.warn("Gunlance — no shells loaded.");
+      else {
+        await item.setFlag("world","temsGunlanceLastBurst",sh);
+        await item.setFlag("world","temsGunlanceShells",0);
+      }
+    }
+    if(n==="Wyvern's Fire"){
+      await item.setFlag("world","temsGunlanceWyvernReady",false);
+    }
+    await syncHeavyResource(item);
+    notifyHeavyResource(item);
   }
+
   if(id===HEAVY.JETHAMMER){
     let f=Number(item.getFlag("world","temsJetFuel")??3);
     const cost=n==="Maximum Thrust"?2:(["Jet Smash","Jet Launch"].includes(n)?1:0);
-    if(cost) await item.setFlag("world","temsJetFuel",heavyClamp(f-cost,0,3));
+    if(cost){
+      if(f < cost) ui.notifications.warn(`Jet Hammer — not enough Fuel (${f}/${cost} required).`);
+      else await item.setFlag("world","temsJetFuel",heavyClamp(f-cost,0,3));
+    }
     if(n==="Vent / Refuel") await item.setFlag("world","temsJetFuel",3);
+    await syncHeavyResource(item);
+    notifyHeavyResource(item);
   }
+
   if(id===HEAVY.LONGSWORD){
     let sp=Number(item.getFlag("world","temsLongswordSpirit")??0);
     if(n==="Spirit Slash") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp-20,0,100));
@@ -909,29 +1130,89 @@ async function heavyUse(activity) {
       const lv=Number(item.getFlag("world","temsLongswordLevel")??0);
       await item.setFlag("world","temsLongswordLevel",heavyClamp(lv-1,0,3));
     }
+    await syncHeavyResource(item);
+    notifyHeavyResource(item);
   }
+
   if(id===HEAVY.GUNHEELS && n==="Dodge Offset"){
     ui.notifications.info(`Dodge Offset: Combo ${item.getFlag("world","temsGunheelsCombo")??0} preserved.`);
   }
+
   if(id===HEAVY.HARPOON){
     if(n==="Set Tether"){
       const t=Array.from(game.user.targets)[0];
-      if(t){ await item.setFlag("world","temsHarpoonTethered",true); await item.setFlag("world","temsHarpoonTarget",t.document.uuid); ui.notifications.info(`Harpoon tethered to ${t.name}.`); }
-      else ui.notifications.warn("Target a token before setting the tether.");
+      if(t){
+        await item.setFlag("world","temsHarpoonTethered",true);
+        await item.setFlag("world","temsHarpoonTarget",t.document.uuid);
+        ui.notifications.info(`Harpoon tethered to ${t.name}.`);
+      } else ui.notifications.warn("Target a token before setting the tether.");
     }
-    if(n==="Release Tether"){ await item.setFlag("world","temsHarpoonTethered",false); await item.setFlag("world","temsHarpoonTarget",""); }
+
+    if(n==="Reel Target"){
+      if(!item.getFlag("world","temsHarpoonTethered")) {
+        ui.notifications.warn("Harpoon — nothing is tethered.");
+      } else {
+        const targetDoc=await resolveHarpoonTarget(item);
+        const selfDoc=actor?.getActiveTokens?.()[0]?.document;
+        if(targetDoc && selfDoc){
+          try {
+            await moveTokenToward(targetDoc,selfDoc,10);
+            ui.notifications.info(`Harpoon — reeled ${targetDoc.name} 10 ft toward you.`);
+          } catch(err) {
+            console.error("Tem's Weapons | Reel Target failed",err);
+            ui.notifications.error("Harpoon could not move the tethered token. Check token permissions/console.");
+          }
+        } else ui.notifications.warn("Harpoon — tethered token could not be found in this scene.");
+      }
+    }
+
+    if(n==="Reel Self"){
+      if(!item.getFlag("world","temsHarpoonTethered")) {
+        ui.notifications.warn("Harpoon — nothing is tethered.");
+      } else {
+        const targetDoc=await resolveHarpoonTarget(item);
+        const selfDoc=actor?.getActiveTokens?.()[0]?.document;
+        if(targetDoc && selfDoc){
+          try {
+            await moveTokenToward(selfDoc,targetDoc,10);
+            ui.notifications.info("Harpoon — reeled yourself 10 ft toward the tether.");
+          } catch(err) {
+            console.error("Tem's Weapons | Reel Self failed",err);
+            ui.notifications.error("Harpoon could not move your token. Check the console.");
+          }
+        } else ui.notifications.warn("Harpoon — tethered token or your active token could not be found.");
+      }
+    }
+
+    if(n==="Release Tether"){
+      await item.setFlag("world","temsHarpoonTethered",false);
+      await item.setFlag("world","temsHarpoonTarget","");
+      ui.notifications.info("Harpoon tether released.");
+    }
   }
+
   if(id===HEAVY.CHAKRAM){
     if(n==="Mark Chakram Location"){
       const t=Array.from(game.user.targets)[0];
-      if(t){ await item.update({"flags.world.temsChakramDeployed":true,"flags.world.temsChakramX":t.document.x,"flags.world.temsChakramY":t.document.y,"flags.world.temsChakramScene":canvas.scene.id}); ui.notifications.info("Chakram location marked."); }
+      if(t){
+        await item.update({
+          "flags.world.temsChakramDeployed":true,
+          "flags.world.temsChakramX":t.document.x,
+          "flags.world.temsChakramY":t.document.y,
+          "flags.world.temsChakramScene":canvas.scene.id
+        });
+        ui.notifications.info("Chakram location marked.");
+      }
       else ui.notifications.warn("Target a token at the chakram destination first.");
     }
     if(n==="Recall Chakram") await item.setFlag("world","temsChakramDeployed",false);
     if(n==="Teleport to Chakram"){
       const tok=actor?.getActiveTokens?.()[0];
       if(tok && item.getFlag("world","temsChakramDeployed") && item.getFlag("world","temsChakramScene")===canvas.scene.id){
-        await tok.document.update({x:Number(item.getFlag("world","temsChakramX")),y:Number(item.getFlag("world","temsChakramY"))});
+        await tok.document.update({
+          x:Number(item.getFlag("world","temsChakramX")),
+          y:Number(item.getFlag("world","temsChakramY"))
+        });
         await item.setFlag("world","temsChakramDeployed",false);
       } else ui.notifications.warn("No deployed chakram location is available in this scene.");
     }
@@ -942,10 +1223,19 @@ Hooks.on("dnd5e.postCreateUsageMessage", heavyUse);
 Hooks.on("dnd5e.postRollAttack", async (activity, roll) => {
   const item=activity?.item ?? activity?.parent; if(!item || !roll) return;
   const target=Array.from(game.user.targets)[0];
+
   let hit=true;
   if(target?.actor) hit=roll.total >= (target.actor.system.attributes.ac.value??10);
-  if(roll.dice?.[0]?.total===1) hit=false; if(roll.dice?.[0]?.total===20) hit=true;
+  const d20 = roll.dice?.[0]?.total;
+  if(d20===1) hit=false;
+  if(d20===20) hit=true;
   if(!hit) return;
+
+  if(ident(item)===HEAVY.METEOR &&
+     ["Meteor Strike","Sweeping Censer"].includes(activity.name) &&
+     target?.actor) {
+    await rollConSaveAndDaze(item,target);
+  }
 
   if(ident(item)===HEAVY.LONGSWORD){
     let sp=Number(item.getFlag("world","temsLongswordSpirit")??0);
@@ -955,18 +1245,41 @@ Hooks.on("dnd5e.postRollAttack", async (activity, roll) => {
       const lv=Number(item.getFlag("world","temsLongswordLevel")??0);
       await item.setFlag("world","temsLongswordLevel",heavyClamp(lv+1,0,3));
     }
+    await syncHeavyResource(item);
+    notifyHeavyResource(item);
   }
-  if(ident(item)===HEAVY.GUNHEELS && ["Pistol Barrage","Heel Shot","Afterburner Kick"].includes(activity.name)){
+
+  if(ident(item)===HEAVY.GUNHEELS &&
+     ["Pistol Barrage","Heel Shot","Afterburner Kick"].includes(activity.name)){
     const c=Number(item.getFlag("world","temsGunheelsCombo")??0);
     await item.setFlag("world","temsGunheelsCombo",heavyClamp(c+1,0,3));
+    ui.notifications.info(`Gunheels / Pistols — Combo ${heavyClamp(c+1,0,3)}/3`);
   }
-  if(ident(item)===HEAVY.GUNHEELS && activity.name==="Bullet Climax") await item.setFlag("world","temsGunheelsCombo",0);
+
+  if(ident(item)===HEAVY.GUNHEELS && activity.name==="Bullet Climax"){
+    await item.setFlag("world","temsGunheelsCombo",0);
+    ui.notifications.info("Gunheels / Pistols — Combo consumed.");
+  }
 });
 
 Hooks.on("dnd5e.rollDamage", async (rolls,data)=>{
   const a=data?.subject, item=a?.item ?? a?.parent; if(!item) return;
   if(ident(item)===HEAVY.GUNLANCE && a.name==="Full Burst"){
     const spent=Number(item.getFlag("world","temsGunlanceLastBurst")??0);
+    // The activity already contributes 1d8, so add the remaining shell dice.
+    if(spent>1){
+      const actor=item.actor;
+      const roll=await new CONFIG.Dice.DamageRoll(
+        `${spent-1}d8`,
+        actor?.getRollData?.() ?? {},
+        {type:"fire"}
+      ).evaluate();
+      await roll.toMessage({
+        speaker:ChatMessage.getSpeaker({actor}),
+        flavor:`${item.name} — Full Burst (${spent} shells total)`
+      });
+    }
+    await item.setFlag("world","temsGunlanceLastBurst",0);
   }
 });
 
@@ -1077,10 +1390,30 @@ Hooks.once("ready", async () => {
     for (const item of actor.items) {
       try {
         if (hasIdentifier(item, TEMS_IDS.SWORD_SHIELD)) await syncSwordShieldGuard(item);
-        if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) await syncDemonMode(item);
+        if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) {
+          await syncDemonMode(item);
+          await syncDualBladeDamage(item);
+        }
+        if (ident(item) === HEAVY.CANE) await syncCaneVisibility(item);
+        if ([HEAVY.JETHAMMER, HEAVY.GUNLANCE, HEAVY.LONGSWORD].includes(ident(item))) {
+          await syncHeavyResource(item);
+        }
       } catch (err) {
         console.warn("Tem's Weapons | Straightforward weapon initial sync failed", item, err);
       }
+    }
+  }
+
+  // Migrate/sync bundled world Items that were imported by earlier module versions.
+  for (const item of game.items) {
+    try {
+      if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) await syncDualBladeDamage(item);
+      if (ident(item) === HEAVY.CANE) await syncCaneVisibility(item);
+      if ([HEAVY.JETHAMMER, HEAVY.GUNLANCE, HEAVY.LONGSWORD].includes(ident(item))) {
+        await syncHeavyResource(item);
+      }
+    } catch (err) {
+      console.warn("Tem's Weapons | World item migration failed", item, err);
     }
   }
 
