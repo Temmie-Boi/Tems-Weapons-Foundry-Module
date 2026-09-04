@@ -1,150 +1,166 @@
-# Tem's Weapons v1.2.8
+# Tem's Weapons
 
-Foundry VTT v14 / D&D5e 5.3.x
+A custom Foundry VTT module containing unique weapons, weapon mechanics, resource systems, transformations, combat modes, and automation built for the D&D5e system.
 
-## Included weapons
+## Compatibility
 
-Tem's weapons
+- Foundry VTT: 14.366
+- D&D5e system: 5.3.2
+- Module version: 1.2.8
+- Rules source: 2024
+
+## Included Weapons
+
+### Coral
+
+- Greatsword
+- Teleportation Chakram
+
+### Gaunt
+
+- Bombs
+- Harpoon
+- Meteor Hammer / Censer
+- Jet Hammer
+
+### Fault
+
+- Sniper Rifle
+- Twin Scimitars
+- Cane Sword / Rifle
+
+### Candy
+
+- Electrified Javelin
+
+### Rival
+
+- Gunheels / Pistols
+
+### STARS
+
+- Sword & Shield
+- Dual Blades
+- Longsword
 - Charge Blade
-- Coral
-  - Greatsword
-- Gaunt
-  - Bombs
-- Fault
-  - Sniper Rifle
-  - Twin Scimitars
-- Candy
-  - Electrified Javelin
-- STARS
-  - Sword & Shield
-  - Dual Blades
+- Gunlance
 
-## Installation
+## Weapon Automation
 
-1. Shut down Foundry.
-2. Replace the existing `Data/modules/tems-weapons/` folder with this version.
-3. Start Foundry and enable **Tem's Weapons**.
-4. Enter the world as a GM.
+Tem's Weapons includes custom automation for weapons whose mechanics cannot be represented using the standard D&D5e item system alone.
 
-The module automatically creates missing folders and bundled weapon items. Existing bundled
-weapons are detected by stable identifier and are not duplicated.
+Current systems include:
 
-## Straightforward batch mechanics
+- Charge Blade modes, Charge, Phials, charged shield, Guard Points, AED, and SAED
+- Dual Blades Demon Mode
+- Longsword Spirit Gauge and Spirit Levels
+- Gunlance Shelling and Wyvern's Fire
+- Jet Hammer Fuel
+- Harpoon tethering and reeling
+- Cane Sword / Rifle transformation
+- Teleportation Chakram deployment and teleportation
+- Gunheels / Pistols combo tracking
 
-### Coral — Greatsword
-- Greatsword Slash: 2d6 slashing.
-- Charged Slash: 4d6 slashing; intended only when the wielder has not moved before the attack.
-- Shoulder Tackle: reaction, roll 1d8 + STR modifier to reduce incoming physical damage.
+Some weapon effects that are difficult or undesirable to automate are intentionally handled manually.
 
-### Gaunt — Bombs
-- Bomb Pouch: 3 item uses.
-- Throw Bomb: 2d6 fire, 10-ft blast, Dexterity save described on the activity.
-- Prime Bomb: bonus-action setup.
-- Throw Primed Bomb: 3d6 fire, 15-ft blast.
-- Bomb activities consume one item use when D&D5e consumption is available.
+## Manual Installation
 
-### Fault — Sniper Rifle
-- 2d10 piercing, range 150/600.
-- Take Aim: bonus-action tactical activity; advantage/cover are currently applied by the player.
-- Headshot: critical hits add an extra 2d10 automatically through the attack activity.
+Download the release ZIP and extract its `tems-weapons` folder into:
 
-### Fault — Twin Scimitars
-- Two 1d6 slashing attacks.
-- Crosscut Bonus: explicit 1d6 roll used once per turn if both attacks hit the same target.
+```text
+%LOCALAPPDATA%\FoundryVTT\Data\modules\
+```
 
-### Candy — Electrified Javelin
-- 1d6 piercing + 1d6 lightning, range 30/120.
-- Overcharged Throw includes the Constitution-save / no-reactions rider in its chat instructions.
+The final path must be:
 
-### STARS — Sword & Shield
-- Sword Slash: 1d8 slashing.
-- Equipped weapon automatically grants +2 AC.
-- Shield Bash: bonus-action 1d4 bludgeoning with the 5-ft push rider described in chat.
+```text
+%LOCALAPPDATA%\FoundryVTT\Data\modules\tems-weapons\module.json
+```
 
-### STARS — Dual Blades
-- Flurry uses two explicit 1d6 slashing attacks.
-- Demon Mode is a bonus-action toggle.
-- Demon Mode automatically gives +10 ft walking speed and -2 AC.
-- While Demon Mode is active, damage from Flurry — Second Blade automatically rolls +1d6 slashing.
+Restart Foundry and enable **Tem's Weapons** in the world.
 
-## Notes
+The module automatically creates an Item folder named **Tem's weapons** and installs its bundled weapons.
 
-The module automates bookkeeping where the rules are unambiguous. Tactical conditions such as
-"did not move before Charged Slash", Take Aim's positioning requirement, both scimitars hitting
-the same target, and save riders remain explicit activities/instructions rather than hidden
-automatic decisions.
+Existing weapons are preserved when possible to prevent duplicate imports.
 
-## v1.1.1 icon update
+## Install Using a Manifest URL
 
-Added supplied custom icons for:
-- Fault — Twin Scimitars
-- Candy — Electrified Javelin
-- STARS — Sword & Shield
+Once GitHub release installation is configured, Tem's Weapons can be installed through Foundry's **Install Module** dialog using:
 
-The bundled item and its activities use the matching icon.
+```text
+https://github.com/Temmie-Boi/Tems-Weapons-Foundry-Module/releases/latest/download/module.json
+```
 
+Paste the URL into the **Manifest URL** field in Foundry's module installer.
 
-## v1.2.0 Mechanic-heavy batch
-Adds Teleportation Chakram, Harpoon, Meteor Hammer/Censer, Jet Hammer, Cane Sword/Rifle, Gunheels/Pistols, Longsword, and Gunlance. Also removes the duplicate Dual Blades Demon Mode update hook that caused the ActiveEffect deletion race.
+## Creating a Release
 
+Development versions are stored using Git tags matching the module version.
 
-## v1.2.1 hotfix
-Fixes a duplicate JavaScript helper declaration that prevented the module script from loading, so the mechanic-heavy bundled weapons now import on GM ready.
+For example:
 
-## v1.2.2 mechanic-heavy stabilization
+```bash
+git add -A
+git commit -m "Release v1.2.8"
+git tag -a v1.2.8 -m "Tem's Weapons v1.2.8"
 
-- Harpoon Reel Target and Reel Self now physically move tokens 10 ft toward the other end of the tether.
-- Meteor Hammer/Censer automatically rolls a CON save after a confirmed hit and applies Dazed for 1 round on failure.
-- Jet Hammer Fuel is mirrored to the D&D5e item Uses counter and announced after fuel actions.
-- Longsword Spirit is mirrored to the item Uses counter; notifications show Spirit and White/Yellow/Red level.
-- Gunlance Shells are mirrored to the item Uses counter and announced after shell actions.
-- Cane Sword/Rifle now synchronizes native D&D5e activity visibility before the activity chooser opens.
-- Dual Blades Demon Mode now adds/removes a real 1d6 slashing damage part on Flurry — Second Blade instead of relying on a separate damage hook.
-- Existing world/actor items are migrated on GM ready; deletion/re-import should not be necessary.
+git push origin main
+git push origin v1.2.8
+```
 
-## v1.2.3 state-order fixes
+Each version can then be published as a GitHub Release with its corresponding installable ZIP.
 
-- Meteor Hammer/Censer CON save and Dazed are intentionally manual.
-- Jet Hammer Fuel is checked and spent in `dnd5e.preUseActivity`, preventing powered attacks at insufficient Fuel.
-- Vent / Refuel restores Fuel to 3 without spending Fuel first.
-- Longsword Spirit gain/spend and Spirit Level changes occur only after a confirmed hit.
-- Longsword Spirit attacks are blocked before use if the required Spirit/Spirit Level is unavailable.
-- Dual Blades Demon Mode now toggles from the actor's real ActiveEffect state, fixing inverted ON/OFF behavior.
+Current version history:
 
-## v1.2.4 synchronization fixes
+- v1.0.0
+- v1.0.1
+- v1.1.0
+- v1.1.1
+- v1.2.0
+- v1.2.1
+- v1.2.2
+- v1.2.3
+- v1.2.4
+- v1.2.5
+- v1.2.6
+- v1.2.7
+- v1.2.8
 
-- Jet Hammer Fuel flag and visible Uses counter are now updated atomically, eliminating the one-step display lag.
-- Longsword uses the same correct `dnd5e.postRollAttack(rolls, data)` hit-confirmation pattern as Charge Blade.
-- Longsword state and its visible 0–100 indicator are updated together.
-- Dual Blades now resets to a known Demon Mode OFF state on world load and toggles only from its authoritative stored state.
+## Development
 
-## v1.2.5 Dual Blades toggle debounce
+The repository's `main` branch contains the latest stable version of Tem's Weapons.
 
-- Demon Mode now ignores duplicate D&D5e activity callbacks from the same button press.
-- One button press can only toggle Demon Mode once.
-- This fixes the first-press no-op / second-press inverted-state behavior.
+Development follows this general process:
 
-## v1.2.6 Dual Blades ActiveEffect cleanup
+1. Implement or modify weapons.
+2. Test the module in Foundry VTT.
+3. Confirm weapon automation and resources behave correctly.
+4. Update the version in `module.json`.
+5. Commit the stable version.
+6. Create a matching Git tag.
+7. Push the commit and tag to GitHub.
+8. Publish the corresponding GitHub Release.
 
-- Demon Mode now removes all stale/duplicate effects before creating a new one.
-- Turning Demon Mode OFF removes every effect tied to that Dual Blades item.
-- Turning Demon Mode ON creates exactly one `-2 AC / +10 ft movement` effect.
-- World load cleanup purges legacy stacked Demon Mode effects and initializes the weapon OFF.
-- Prevents AC from stacking downward across repeated activations.
+Major weapon batches use minor version increases, while stabilization and bug-fix releases use patch versions.
 
-## v1.2.7 Dual Blades authoritative effect state
+For example:
 
-- Demon Mode no longer decides ON/OFF from the stored flag.
-- The actual Demon Mode ActiveEffect is now authoritative.
-- If the effect exists, the next press turns Demon Mode OFF.
-- If no effect exists, the next press turns Demon Mode ON.
-- The stored flag is synchronized afterward to mirror the actual effect state.
+```text
+v1.2.8  Current stable release
+v1.3.0  Next weapon/content batch
+v1.3.1  Bug fixes for v1.3.0
+```
 
-## v1.2.8 startup silence + Dual Blades rewrite
+## Important
 
-- Jet Hammer and Longsword migration/synchronization no longer emit notifications on world startup.
-- Dual Blades Demon Mode toggle logic was rewritten rather than further patched.
-- Startup only cleans legacy effects and establishes a silent OFF state.
-- Each Demon Mode use explicitly flips OFF->ON or ON->OFF once.
-- Applying the mode first removes every legacy effect from the weapon, then creates exactly one effect when ON.
-- AC, movement, stored state, and Second Blade damage are synchronized from the requested boolean state.
+Tem's Weapons is a custom module intended for use with Foundry VTT and the D&D5e game system.
+
+Some weapons use custom JavaScript automation tied to D&D5e activities and hooks. Changes to Foundry VTT or the D&D5e system may require updates to the module's automation.
+
+The module is currently developed and tested against:
+
+```text
+Foundry VTT 14.366
+D&D5e 5.3.2
+2024 Rules
+```
