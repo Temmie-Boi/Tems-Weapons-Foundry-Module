@@ -1,4 +1,4 @@
-# Tem's Weapons v1.1.1
+# Tem's Weapons v1.2.0
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -82,3 +82,7 @@ Added supplied custom icons for:
 - STARS — Sword & Shield
 
 The bundled item and its activities use the matching icon.
+
+
+## v1.2.0 Mechanic-heavy batch
+Adds Teleportation Chakram, Harpoon, Meteor Hammer/Censer, Jet Hammer, Cane Sword/Rifle, Gunheels/Pistols, Longsword, and Gunlance. Also removes the duplicate Dual Blades Demon Mode update hook that caused the ActiveEffect deletion race.

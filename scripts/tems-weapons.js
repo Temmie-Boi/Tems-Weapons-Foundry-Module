@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.1.1
+ * Tem's Weapons v1.2.0
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -865,12 +865,108 @@ Hooks.on("updateItem", async (item, changes) => {
       await syncSwordShieldGuard(item);
     }
   }
+});
 
-  if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) {
-    const flat = foundry.utils.flattenObject(changes ?? {});
-    if (Object.keys(flat).some(k => k.startsWith("flags.world.temsDualBladesDemonMode"))) {
-      await syncDemonMode(item);
+
+/* ------------------------------------------------------------------------- */
+/* MECHANIC-HEAVY WEAPONS                                                    */
+/* ------------------------------------------------------------------------- */
+const HEAVY = {
+  METEOR:"tems-gaunt-meteor-hammer", GUNHEELS:"tems-rival-gunheels-pistols",
+  LONGSWORD:"tems-stars-longsword", GUNLANCE:"tems-stars-gunlance",
+  CANE:"tems-fault-cane-rifle", HARPOON:"tems-gaunt-harpoon",
+  CHAKRAM:"tems-coral-teleport-chakram", JETHAMMER:"tems-gaunt-jet-hammer"
+};
+const ident = i => i?.system?.identifier;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+async function heavyUse(activity) {
+  const item=activity?.item ?? activity?.parent; if(!item) return;
+  const id=ident(item), n=activity.name, actor=item.actor;
+
+  if(id===HEAVY.CANE && n==="Transform"){
+    const m=item.getFlag("world","temsCaneMode")==="rifle"?"sword":"rifle";
+    await item.setFlag("world","temsCaneMode",m); ui.notifications.info(`Cane weapon: ${m.toUpperCase()} mode.`);
+  }
+  if(id===HEAVY.GUNLANCE){
+    let sh=Number(item.getFlag("world","temsGunlanceShells")??5);
+    if(n==="Reload"){ await item.setFlag("world","temsGunlanceShells",5); ui.notifications.info("Gunlance reloaded: 5 shells."); }
+    if(n==="Shelling" && sh>0){ await item.setFlag("world","temsGunlanceShells",sh-1); }
+    if(n==="Full Burst" && sh>0){ await item.setFlag("world","temsGunlanceShells",0); }
+    if(n==="Wyvern's Fire"){ await item.setFlag("world","temsGunlanceWyvernReady",false); }
+  }
+  if(id===HEAVY.JETHAMMER){
+    let f=Number(item.getFlag("world","temsJetFuel")??3);
+    const cost=n==="Maximum Thrust"?2:(["Jet Smash","Jet Launch"].includes(n)?1:0);
+    if(cost) await item.setFlag("world","temsJetFuel",clamp(f-cost,0,3));
+    if(n==="Vent / Refuel") await item.setFlag("world","temsJetFuel",3);
+  }
+  if(id===HEAVY.LONGSWORD){
+    let sp=Number(item.getFlag("world","temsLongswordSpirit")??0);
+    if(n==="Spirit Slash") await item.setFlag("world","temsLongswordSpirit",clamp(sp-20,0,100));
+    if(n==="Spirit Roundslash") await item.setFlag("world","temsLongswordSpirit",clamp(sp-30,0,100));
+    if(n==="Spirit Helm Breaker"){
+      const lv=Number(item.getFlag("world","temsLongswordLevel")??0);
+      await item.setFlag("world","temsLongswordLevel",clamp(lv-1,0,3));
     }
+  }
+  if(id===HEAVY.GUNHEELS && n==="Dodge Offset"){
+    ui.notifications.info(`Dodge Offset: Combo ${item.getFlag("world","temsGunheelsCombo")??0} preserved.`);
+  }
+  if(id===HEAVY.HARPOON){
+    if(n==="Set Tether"){
+      const t=Array.from(game.user.targets)[0];
+      if(t){ await item.setFlag("world","temsHarpoonTethered",true); await item.setFlag("world","temsHarpoonTarget",t.document.uuid); ui.notifications.info(`Harpoon tethered to ${t.name}.`); }
+      else ui.notifications.warn("Target a token before setting the tether.");
+    }
+    if(n==="Release Tether"){ await item.setFlag("world","temsHarpoonTethered",false); await item.setFlag("world","temsHarpoonTarget",""); }
+  }
+  if(id===HEAVY.CHAKRAM){
+    if(n==="Mark Chakram Location"){
+      const t=Array.from(game.user.targets)[0];
+      if(t){ await item.update({"flags.world.temsChakramDeployed":true,"flags.world.temsChakramX":t.document.x,"flags.world.temsChakramY":t.document.y,"flags.world.temsChakramScene":canvas.scene.id}); ui.notifications.info("Chakram location marked."); }
+      else ui.notifications.warn("Target a token at the chakram destination first.");
+    }
+    if(n==="Recall Chakram") await item.setFlag("world","temsChakramDeployed",false);
+    if(n==="Teleport to Chakram"){
+      const tok=actor?.getActiveTokens?.()[0];
+      if(tok && item.getFlag("world","temsChakramDeployed") && item.getFlag("world","temsChakramScene")===canvas.scene.id){
+        await tok.document.update({x:Number(item.getFlag("world","temsChakramX")),y:Number(item.getFlag("world","temsChakramY"))});
+        await item.setFlag("world","temsChakramDeployed",false);
+      } else ui.notifications.warn("No deployed chakram location is available in this scene.");
+    }
+  }
+}
+Hooks.on("dnd5e.postCreateUsageMessage", heavyUse);
+
+Hooks.on("dnd5e.postRollAttack", async (activity, roll) => {
+  const item=activity?.item ?? activity?.parent; if(!item || !roll) return;
+  const target=Array.from(game.user.targets)[0];
+  let hit=true;
+  if(target?.actor) hit=roll.total >= (target.actor.system.attributes.ac.value??10);
+  if(roll.dice?.[0]?.total===1) hit=false; if(roll.dice?.[0]?.total===20) hit=true;
+  if(!hit) return;
+
+  if(ident(item)===HEAVY.LONGSWORD){
+    let sp=Number(item.getFlag("world","temsLongswordSpirit")??0);
+    if(activity.name==="Overhead Slash") await item.setFlag("world","temsLongswordSpirit",clamp(sp+20,0,100));
+    if(activity.name==="Thrust") await item.setFlag("world","temsLongswordSpirit",clamp(sp+15,0,100));
+    if(activity.name==="Spirit Roundslash"){
+      const lv=Number(item.getFlag("world","temsLongswordLevel")??0);
+      await item.setFlag("world","temsLongswordLevel",clamp(lv+1,0,3));
+    }
+  }
+  if(ident(item)===HEAVY.GUNHEELS && ["Pistol Barrage","Heel Shot","Afterburner Kick"].includes(activity.name)){
+    const c=Number(item.getFlag("world","temsGunheelsCombo")??0);
+    await item.setFlag("world","temsGunheelsCombo",clamp(c+1,0,3));
+  }
+  if(ident(item)===HEAVY.GUNHEELS && activity.name==="Bullet Climax") await item.setFlag("world","temsGunheelsCombo",0);
+});
+
+Hooks.on("dnd5e.rollDamage", async (rolls,data)=>{
+  const a=data?.subject, item=a?.item ?? a?.parent; if(!item) return;
+  if(ident(item)===HEAVY.GUNLANCE && a.name==="Full Burst"){
+    const spent=Number(item.getFlag("world","temsGunlanceLastBurst")??0);
   }
 });
 
@@ -888,7 +984,15 @@ const BUNDLED_WEAPONS = [
   { path: "items/fault/twin-scimitars.json", identifier: "tems-fault-twin-scimitars", folder: "Fault", icon: "assets/twin-scimitars.png" },
   { path: "items/candy/electrified-javelin.json", identifier: "tems-candy-electrified-javelin", folder: "Candy", icon: "assets/electrified-javelin.png" },
   { path: "items/stars/sword-shield.json", identifier: "tems-stars-sword-shield", folder: "STARS", icon: "assets/sword-shield.png" },
-  { path: "items/stars/dual-blades.json", identifier: "tems-stars-dual-blades", folder: "STARS" }
+  { path: "items/stars/dual-blades.json", identifier: "tems-stars-dual-blades", folder: "STARS" },
+  { path: "items/coral/teleportation-chakram.json", identifier: "tems-coral-teleport-chakram", folder: "Coral" },
+  { path: "items/gaunt/harpoon.json", identifier: "tems-gaunt-harpoon", folder: "Gaunt" },
+  { path: "items/gaunt/meteor-hammer-censer.json", identifier: "tems-gaunt-meteor-hammer", folder: "Gaunt" },
+  { path: "items/gaunt/jet-hammer.json", identifier: "tems-gaunt-jet-hammer", folder: "Gaunt" },
+  { path: "items/fault/cane-sword-rifle.json", identifier: "tems-fault-cane-rifle", folder: "Fault" },
+  { path: "items/rival/gunheels-pistols.json", identifier: "tems-rival-gunheels-pistols", folder: "Rival" },
+  { path: "items/stars/longsword.json", identifier: "tems-stars-longsword", folder: "STARS" },
+  { path: "items/stars/gunlance.json", identifier: "tems-stars-gunlance", folder: "STARS" }
 ];
 
 async function ensureItemFolder(name, parent=null) {
