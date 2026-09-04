@@ -24,3 +24,9 @@ The import is idempotent: if a Charge Blade with identifier `charge-blade` alrea
 ## Important
 
 The old `charge-blade-automation` module and this module should not both be enabled. They would both listen to the same D&D5e hooks and could process the Charge Blade twice.
+
+
+## v1.0.1
+
+Fixed the Charge Blade item sheet opening itself whenever an activity changed weapon state.
+The module now refreshes item/actor sheets only when those sheets are already open.

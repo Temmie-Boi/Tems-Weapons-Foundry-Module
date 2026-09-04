@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.0.0
+ * Tem's Weapons v1.0.1
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -292,8 +292,8 @@ async function syncActivityVisibility(item) {
     }
 
     // Ask open sheets to refresh immediately.
-    item.sheet?.render?.({force: true});
-    item.actor?.sheet?.render?.({force: true});
+    if (item.sheet?.rendered) item.sheet.render({force: true});
+    if (item.actor?.sheet?.rendered) item.actor.sheet.render({force: true});
   } finally {
     visibilityLocks.delete(lockKey);
   }
@@ -832,8 +832,8 @@ Hooks.once("ready", async () => {
       }
 
       await item.update(updates);
-      item.sheet?.render?.({force: true});
-      item.actor?.sheet?.render?.({force: true});
+      if (item.sheet?.rendered) item.sheet.render({force: true});
+      if (item.actor?.sheet?.rendered) item.actor.sheet.render({force: true});
     }
   };
 
