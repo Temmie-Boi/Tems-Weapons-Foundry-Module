@@ -22,7 +22,7 @@
           "targets": []
         },
         "description": {
-          "chatFlavor": "<p>On hit: CON save or Dazed until the start of your next turn.</p>"
+          "chatFlavor": "<p>On hit: manually make a CON save or become Dazed until the start of the wielder's next turn.</p>"
         },
         "duration": {
           "units": "inst",
@@ -105,7 +105,7 @@
           "targets": []
         },
         "description": {
-          "chatFlavor": "<p>Wide control swing. On hit: CON save or Dazed.</p>"
+          "chatFlavor": "<p>On hit: manually make a CON save or become Dazed until the start of the wielder's next turn.</p>"
         },
         "duration": {
           "units": "inst",
@@ -193,7 +193,7 @@
       "max": ""
     },
     "description": {
-      "value": "<h2>Meteor Hammer / Censer</h2><p>A reach control weapon.</p><p><strong>Concussive Strike:</strong> on a hit the target makes a Constitution save against the wielder's normal save DC. On failure it is Dazed until the start of the wielder's next turn.</p>",
+      "value": "\n<h2>Meteor Hammer / Censer</h2>\n<p>A reach control weapon.</p>\n<p><strong>Concussive Strike:</strong> on a hit, Mark manually has the target make a Constitution save against the wielder's normal save DC. On a failure, the target is Dazed until the start of the wielder's next turn.</p>\n",
       "chat": "<p><strong>Meteor Hammer / Censer</strong></p>"
     },
     "identifier": "tems-gaunt-meteor-hammer",

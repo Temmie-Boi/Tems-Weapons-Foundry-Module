@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.2
+ * Tem's Weapons v1.2.3
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -872,11 +872,23 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
   if (!item) return;
 
   if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES) && activity.name === "Demon Mode") {
-    const active = !Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
+    const actor = item.actor;
+    const effectIsActive = Boolean(actor?.effects?.find(e =>
+      e.name === DEMON_EFFECT &&
+      e.getFlag("tems-weapons", "sourceItemId") === item.id
+    ));
+
+    // Toggle from the state that is ACTUALLY on the actor, not a possibly-stale flag.
+    const active = !effectIsActive;
+
     await item.setFlag("world", "temsDualBladesDemonMode", active);
     await syncDemonMode(item);
     await syncDualBladeDamage(item);
-    ui.notifications.info(`Dual Blades: Demon Mode ${active ? "ON" : "OFF"} — Second Blade ${active ? "+1d6 slashing" : "normal damage"}.`);
+
+    ui.notifications.info(
+      `Dual Blades: Demon Mode ${active ? "ON" : "OFF"} — ` +
+      `${active ? "+10 ft movement, -2 AC, Second Blade +1d6" : "normal movement/AC/damage"}.`
+    );
   }
 });
 
@@ -1076,6 +1088,65 @@ async function rollConSaveAndDaze(item, targetToken) {
   ui.notifications.warn(`${targetToken.name} failed the CON save and is Dazed.`);
 }
 
+
+Hooks.on("dnd5e.preUseActivity", async (activity) => {
+  const item = activity?.item ?? activity?.parent;
+  if (!item) return true;
+
+  const id = ident(item);
+  const name = activity.name;
+
+  // Jet Hammer: validate and spend Fuel BEFORE Foundry starts the activity.
+  if (id === HEAVY.JETHAMMER) {
+    let fuel = Number(item.getFlag("world", "temsJetFuel") ?? 3);
+
+    if (name === "Vent / Refuel") {
+      await item.setFlag("world", "temsJetFuel", 3);
+      await syncHeavyResource(item);
+      notifyHeavyResource(item);
+      return true;
+    }
+
+    const cost =
+      name === "Maximum Thrust" ? 2 :
+      ["Jet Smash", "Jet Launch"].includes(name) ? 1 : 0;
+
+    if (cost > 0) {
+      if (fuel < cost) {
+        ui.notifications.warn(`Jet Hammer — not enough Fuel (${fuel}/${cost} required).`);
+        return false;
+      }
+
+      await item.setFlag("world", "temsJetFuel", heavyClamp(fuel - cost, 0, 3));
+      await syncHeavyResource(item);
+      notifyHeavyResource(item);
+    }
+  }
+
+  // Longsword: hard-gate Spirit spending before the activity begins.
+  if (id === HEAVY.LONGSWORD) {
+    const spirit = Number(item.getFlag("world", "temsLongswordSpirit") ?? 0);
+    const level = Number(item.getFlag("world", "temsLongswordLevel") ?? 0);
+
+    if (name === "Spirit Slash" && spirit < 20) {
+      ui.notifications.warn(`Longsword — not enough Spirit (${spirit}/20 required).`);
+      return false;
+    }
+
+    if (name === "Spirit Roundslash" && spirit < 30) {
+      ui.notifications.warn(`Longsword — not enough Spirit (${spirit}/30 required).`);
+      return false;
+    }
+
+    if (name === "Spirit Helm Breaker" && level < 1) {
+      ui.notifications.warn("Longsword — Spirit Helm Breaker requires at least White Spirit Level.");
+      return false;
+    }
+  }
+
+  return true;
+});
+
 async function heavyUse(activity) {
   const item=activity?.item ?? activity?.parent; if(!item) return;
   const id=ident(item), n=activity.name, actor=item.actor;
@@ -1110,29 +1181,7 @@ async function heavyUse(activity) {
     notifyHeavyResource(item);
   }
 
-  if(id===HEAVY.JETHAMMER){
-    let f=Number(item.getFlag("world","temsJetFuel")??3);
-    const cost=n==="Maximum Thrust"?2:(["Jet Smash","Jet Launch"].includes(n)?1:0);
-    if(cost){
-      if(f < cost) ui.notifications.warn(`Jet Hammer — not enough Fuel (${f}/${cost} required).`);
-      else await item.setFlag("world","temsJetFuel",heavyClamp(f-cost,0,3));
-    }
-    if(n==="Vent / Refuel") await item.setFlag("world","temsJetFuel",3);
-    await syncHeavyResource(item);
-    notifyHeavyResource(item);
-  }
 
-  if(id===HEAVY.LONGSWORD){
-    let sp=Number(item.getFlag("world","temsLongswordSpirit")??0);
-    if(n==="Spirit Slash") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp-20,0,100));
-    if(n==="Spirit Roundslash") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp-30,0,100));
-    if(n==="Spirit Helm Breaker"){
-      const lv=Number(item.getFlag("world","temsLongswordLevel")??0);
-      await item.setFlag("world","temsLongswordLevel",heavyClamp(lv-1,0,3));
-    }
-    await syncHeavyResource(item);
-    notifyHeavyResource(item);
-  }
 
   if(id===HEAVY.GUNHEELS && n==="Dodge Offset"){
     ui.notifications.info(`Dodge Offset: Combo ${item.getFlag("world","temsGunheelsCombo")??0} preserved.`);
@@ -1238,13 +1287,36 @@ Hooks.on("dnd5e.postRollAttack", async (activity, roll) => {
   }
 
   if(ident(item)===HEAVY.LONGSWORD){
-    let sp=Number(item.getFlag("world","temsLongswordSpirit")??0);
-    if(activity.name==="Overhead Slash") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp+20,0,100));
-    if(activity.name==="Thrust") await item.setFlag("world","temsLongswordSpirit",heavyClamp(sp+15,0,100));
-    if(activity.name==="Spirit Roundslash"){
-      const lv=Number(item.getFlag("world","temsLongswordLevel")??0);
-      await item.setFlag("world","temsLongswordLevel",heavyClamp(lv+1,0,3));
+    let spirit = Number(item.getFlag("world","temsLongswordSpirit") ?? 0);
+    let level = Number(item.getFlag("world","temsLongswordLevel") ?? 0);
+
+    if(activity.name==="Overhead Slash"){
+      spirit = heavyClamp(spirit + 20, 0, 100);
+      await item.setFlag("world","temsLongswordSpirit",spirit);
     }
+
+    if(activity.name==="Thrust"){
+      spirit = heavyClamp(spirit + 15, 0, 100);
+      await item.setFlag("world","temsLongswordSpirit",spirit);
+    }
+
+    if(activity.name==="Spirit Slash"){
+      spirit = heavyClamp(spirit - 20, 0, 100);
+      await item.setFlag("world","temsLongswordSpirit",spirit);
+    }
+
+    if(activity.name==="Spirit Roundslash"){
+      spirit = heavyClamp(spirit - 30, 0, 100);
+      level = heavyClamp(level + 1, 0, 3);
+      await item.setFlag("world","temsLongswordSpirit",spirit);
+      await item.setFlag("world","temsLongswordLevel",level);
+    }
+
+    if(activity.name==="Spirit Helm Breaker"){
+      level = heavyClamp(level - 1, 0, 3);
+      await item.setFlag("world","temsLongswordLevel",level);
+    }
+
     await syncHeavyResource(item);
     notifyHeavyResource(item);
   }
@@ -1391,6 +1463,11 @@ Hooks.once("ready", async () => {
       try {
         if (hasIdentifier(item, TEMS_IDS.SWORD_SHIELD)) await syncSwordShieldGuard(item);
         if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) {
+          const effectIsActive = Boolean(actor.effects.find(e =>
+            e.name === DEMON_EFFECT &&
+            e.getFlag("tems-weapons", "sourceItemId") === item.id
+          ));
+          await item.setFlag("world", "temsDualBladesDemonMode", effectIsActive);
           await syncDemonMode(item);
           await syncDualBladeDamage(item);
         }
@@ -1407,7 +1484,10 @@ Hooks.once("ready", async () => {
   // Migrate/sync bundled world Items that were imported by earlier module versions.
   for (const item of game.items) {
     try {
-      if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) await syncDualBladeDamage(item);
+      if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES)) {
+        await item.setFlag("world", "temsDualBladesDemonMode", false);
+        await syncDualBladeDamage(item);
+      }
       if (ident(item) === HEAVY.CANE) await syncCaneVisibility(item);
       if ([HEAVY.JETHAMMER, HEAVY.GUNLANCE, HEAVY.LONGSWORD].includes(ident(item))) {
         await syncHeavyResource(item);

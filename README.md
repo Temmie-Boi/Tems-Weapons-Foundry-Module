@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.2
+# Tem's Weapons v1.2.3
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -101,3 +101,12 @@ Fixes a duplicate JavaScript helper declaration that prevented the module script
 - Cane Sword/Rifle now synchronizes native D&D5e activity visibility before the activity chooser opens.
 - Dual Blades Demon Mode now adds/removes a real 1d6 slashing damage part on Flurry — Second Blade instead of relying on a separate damage hook.
 - Existing world/actor items are migrated on GM ready; deletion/re-import should not be necessary.
+
+## v1.2.3 state-order fixes
+
+- Meteor Hammer/Censer CON save and Dazed are intentionally manual.
+- Jet Hammer Fuel is checked and spent in `dnd5e.preUseActivity`, preventing powered attacks at insufficient Fuel.
+- Vent / Refuel restores Fuel to 3 without spending Fuel first.
+- Longsword Spirit gain/spend and Spirit Level changes occur only after a confirmed hit.
+- Longsword Spirit attacks are blocked before use if the required Spirit/Spirit Level is unavailable.
+- Dual Blades Demon Mode now toggles from the actor's real ActiveEffect state, fixing inverted ON/OFF behavior.
