@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.6
+# Tem's Weapons v1.2.7
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -131,3 +131,11 @@ Fixes a duplicate JavaScript helper declaration that prevented the module script
 - Turning Demon Mode ON creates exactly one `-2 AC / +10 ft movement` effect.
 - World load cleanup purges legacy stacked Demon Mode effects and initializes the weapon OFF.
 - Prevents AC from stacking downward across repeated activations.
+
+## v1.2.7 Dual Blades authoritative effect state
+
+- Demon Mode no longer decides ON/OFF from the stored flag.
+- The actual Demon Mode ActiveEffect is now authoritative.
+- If the effect exists, the next press turns Demon Mode OFF.
+- If no effect exists, the next press turns Demon Mode ON.
+- The stored flag is synchronized afterward to mirror the actual effect state.

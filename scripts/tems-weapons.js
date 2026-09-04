@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.6
+ * Tem's Weapons v1.2.7
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -827,6 +827,9 @@ async function syncDemonMode(item) {
 
   // OFF means cleanly OFF: no effect remains.
   if (!active) {
+    if (Boolean(item.getFlag("world", "temsDualBladesDemonMode"))) {
+      await item.setFlag("world", "temsDualBladesDemonMode", false);
+    }
     if (actor.sheet?.rendered) actor.sheet.render({force:true});
     return;
   }
@@ -860,6 +863,14 @@ async function syncDemonMode(item) {
   };
 
   await actor.createEmbeddedDocuments("ActiveEffect", [effectData]);
+
+  const nowActive = actor.effects.some(e =>
+    e.name === DEMON_EFFECT &&
+    e.getFlag("tems-weapons", "sourceItemId") === item.id
+  );
+  if (Boolean(item.getFlag("world", "temsDualBladesDemonMode")) !== nowActive) {
+    await item.setFlag("world", "temsDualBladesDemonMode", nowActive);
+  }
 
   if (actor.sheet?.rendered) actor.sheet.render({force:true});
 }
@@ -923,12 +934,20 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
   if (!item) return;
 
   if (hasIdentifier(item, TEMS_IDS.DUAL_BLADES) && activity.name === "Demon Mode") {
-    // D&D5e can revisit the same activity workflow more than once.
-    // Ignore duplicate callbacks from the same button press.
     if (dualToggleGuarded(item)) return;
 
-    const current = Boolean(item.getFlag("world", "temsDualBladesDemonMode"));
-    const active = !current;
+    const actor = item.actor;
+    if (!actor) return;
+
+    const effectActive = actor.effects.some(e =>
+      e.name === DEMON_EFFECT &&
+      e.getFlag("tems-weapons", "sourceItemId") === item.id
+    );
+
+    // Reality is authoritative:
+    // effect exists -> turn OFF
+    // no effect -> turn ON
+    const active = !effectActive;
 
     await item.setFlag("world", "temsDualBladesDemonMode", active);
     await syncDemonMode(item);
