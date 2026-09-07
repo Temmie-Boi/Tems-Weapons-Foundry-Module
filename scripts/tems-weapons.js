@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.5.0
+ * Tem's Weapons v1.6.0
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -2379,6 +2379,251 @@ Hooks.on("dnd5e.rollDamage", async (rolls, data) => {
   });
 });
 
+
+/* ------------------------------------------------------------------------- */
+/* v1.6.0 NPC WEAPON FINALE                                                  */
+/* ------------------------------------------------------------------------- */
+
+const V160_IDS = Object.freeze({
+  MOTOR: "tems-motorbike-chainsaw-chaingun",
+  ARGUS: "tems-argus-steamknight",
+  PARIS: "tems-paris-steamknight"
+});
+
+const V160_MOTOR_MODES = new Set(["motorbike", "chainsaw", "chaingun"]);
+const V160_MOTOR_INTERNAL = new Set([
+  "Revving Cut — Second Strike",
+  "Chaingun Burst — Shot 2", "Chaingun Burst — Shot 3",
+  "Full Auto — Shot 2", "Full Auto — Shot 3", "Full Auto — Shot 4", "Full Auto — Shot 5",
+  "Strafing Fire — Shot 2"
+]);
+const V160_ARGUS_INTERNAL = new Set([
+  "Sustained Fire — Shot 2", "Sustained Fire — Shot 3", "Sustained Fire — Shot 4"
+]);
+const V160_PARIS_INTERNAL = new Set([
+  "Burst Fire — Shot 2", "Burst Fire — Shot 3"
+]);
+
+function v160Mode(item) {
+  const raw = String(item?.getFlag("world", "temsMotorMode") ?? "motorbike");
+  return V160_MOTOR_MODES.has(raw) ? raw : "motorbike";
+}
+
+async function v160SetActivityVisible(item, activity, visible, updates) {
+  if (!activity) return;
+  const desiredMin = null;
+  const desiredMax = visible ? null : -1;
+  const curMin = activity.visibility?.level?.min ?? null;
+  const curMax = activity.visibility?.level?.max ?? null;
+  if (curMin !== desiredMin) updates[`system.activities.${activity.id}.visibility.level.min`] = desiredMin;
+  if (curMax !== desiredMax) updates[`system.activities.${activity.id}.visibility.level.max`] = desiredMax;
+}
+
+async function v160SyncMotorVisibility(item) {
+  if (!item || item.system?.identifier !== V160_IDS.MOTOR) return;
+  const mode = v160Mode(item);
+  const spun = Boolean(item.getFlag("world", "temsChaingunSpunUp") ?? false);
+  const engaged = String(item.getFlag("world", "temsChainsawEngagedTarget") ?? "");
+  const updates = {};
+
+  for (const activity of Array.from(item.system.activities ?? [])) {
+    const n = activity.name;
+    let visible = true;
+
+    if (V160_MOTOR_INTERNAL.has(n)) visible = false;
+    else if (n === "Motorbike Mode") visible = mode !== "motorbike";
+    else if (n === "Chainsaw Mode") visible = mode !== "chainsaw";
+    else if (n === "Chaingun Mode") visible = mode !== "chaingun";
+    else if (["Drive", "Ram", "Burnout"].includes(n)) visible = mode === "motorbike";
+    else if (["Chainsaw Slash", "Revving Cut", "Grind"].includes(n)) visible = mode === "chainsaw";
+    else if (n === "Rip Through") visible = mode === "chainsaw" && Boolean(engaged);
+    else if (["Chaingun Burst", "Spin Up", "Strafing Fire"].includes(n)) visible = mode === "chaingun";
+    else if (n === "Full Auto") visible = mode === "chaingun" && spun;
+
+    await v160SetActivityVisible(item, activity, visible, updates);
+  }
+
+  if (Object.keys(updates).length) await item.update(updates, {render:false});
+}
+
+async function v160SetMotorMode(item, mode) {
+  if (!V160_MOTOR_MODES.has(mode)) return;
+  await item.update({
+    "flags.world.temsMotorMode": mode,
+    "flags.world.temsChaingunSpunUp": false,
+    "flags.world.temsChainsawEngagedTarget": ""
+  }, {render:false});
+  await v160SyncMotorVisibility(item);
+  ui.notifications.info(`Motorbike / Chainsaw / Chaingun — ${mode[0].toUpperCase() + mode.slice(1)} Mode.`);
+}
+
+async function v160SyncArgus(item) {
+  if (!item || item.system?.identifier !== V160_IDS.ARGUS) return;
+  const braced = Boolean(item.getFlag("world", "temsArgusBraced") ?? false);
+  const heavy = Array.from(item.system.activities ?? []).find(a => a.name === "Heavy Cannon");
+  if (!heavy) return;
+  const desired = braced ? "2" : "";
+  if (String(heavy.attack?.bonus ?? "") !== desired) {
+    await item.update({[`system.activities.${heavy.id}.attack.bonus`]: desired}, {render:false});
+  }
+}
+
+async function v160SetArgusBraced(item, braced, {notify=true}={}) {
+  await item.setFlag("world", "temsArgusBraced", Boolean(braced));
+  await v160SyncArgus(item);
+  if (notify) ui.notifications.info(`Argus Class Steamknight — Brace ${braced ? "engaged" : "ended"}.`);
+}
+
+async function v160RollFollowups(item, names) {
+  const targets = () => Array.from(game.user.targets ?? []);
+  for (const name of names) {
+    const activity = Array.from(item?.system?.activities ?? []).find(a => a.name === name);
+    if (!activity) {
+      console.warn(`Tem's Weapons | v1.6 follow-up activity missing: ${name}`);
+      continue;
+    }
+
+    try {
+      if (typeof activity.rollAttack !== "function") throw new Error(`${name} does not expose rollAttack()`);
+      const rolls = await activity.rollAttack();
+      const selected = targets();
+      const hit = selected.length && (rolls ?? []).some(roll => selected.some(token => attackHitsTarget(roll, token)));
+      if (hit && typeof activity.rollDamage === "function") await activity.rollDamage();
+    } catch (err) {
+      console.error(`Tem's Weapons | Could not launch v1.6 follow-up: ${name}`, err);
+      ui.notifications.warn(`${name} could not be launched automatically. Check the console for details.`);
+      break;
+    }
+  }
+}
+
+Hooks.on("dnd5e.preUseActivity", async activity => {
+  const item = getItem(activity);
+  if (!item) return;
+  const id = item.system?.identifier;
+  const name = activity?.name;
+
+  if (id === V160_IDS.MOTOR) {
+    await v160SyncMotorVisibility(item);
+    const mode = v160Mode(item);
+    if (name === "Full Auto" && (mode !== "chaingun" || !Boolean(item.getFlag("world", "temsChaingunSpunUp") ?? false))) {
+      ui.notifications.warn("Full Auto requires Chaingun Mode and Spin Up.");
+      return false;
+    }
+    if (name === "Rip Through") {
+      const engaged = String(item.getFlag("world", "temsChainsawEngagedTarget") ?? "");
+      const selected = Array.from(game.user.targets ?? []);
+      if (!engaged) {
+        ui.notifications.warn("Rip Through requires a target engaged by Grind.");
+        return false;
+      }
+      if (!selected.some(t => t.document?.uuid === engaged || t.uuid === engaged)) {
+        ui.notifications.warn("Target the creature currently engaged by Grind before using Rip Through.");
+        return false;
+      }
+    }
+  }
+});
+
+Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
+  const item = getItem(activity);
+  if (!item) return;
+  const id = item.system?.identifier;
+  const n = activity?.name;
+
+  if (id === V160_IDS.MOTOR) {
+    if (n === "Motorbike Mode") return v160SetMotorMode(item, "motorbike");
+    if (n === "Chainsaw Mode") return v160SetMotorMode(item, "chainsaw");
+    if (n === "Chaingun Mode") return v160SetMotorMode(item, "chaingun");
+    if (n === "Spin Up") {
+      await item.setFlag("world", "temsChaingunSpunUp", true);
+      await v160SyncMotorVisibility(item);
+      ui.notifications.info("Chaingun spun up — Full Auto unlocked until you switch modes.");
+      return;
+    }
+  }
+
+  if (id === V160_IDS.ARGUS) {
+    if (n === "Brace") return v160SetArgusBraced(item, true);
+    if (n === "Advance") return v160SetArgusBraced(item, false);
+  }
+});
+
+Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
+  const activity = data?.subject;
+  const item = getItem(activity);
+  if (!item) return;
+  const id = item.system?.identifier;
+  const n = activity?.name;
+
+  if (id === V160_IDS.MOTOR) {
+    if (n === "Revving Cut") return v160RollFollowups(item, ["Revving Cut — Second Strike"]);
+    if (n === "Chaingun Burst") return v160RollFollowups(item, ["Chaingun Burst — Shot 2", "Chaingun Burst — Shot 3"]);
+    if (n === "Full Auto") return v160RollFollowups(item, ["Full Auto — Shot 2", "Full Auto — Shot 3", "Full Auto — Shot 4", "Full Auto — Shot 5"]);
+    if (n === "Strafing Fire") return v160RollFollowups(item, ["Strafing Fire — Shot 2"]);
+
+    if (n === "Grind") {
+      const selected = Array.from(game.user.targets ?? []);
+      const hitTarget = selected.find(token => (rolls ?? []).some(roll => attackHitsTarget(roll, token)));
+      if (hitTarget) {
+        const uuid = hitTarget.document?.uuid ?? hitTarget.uuid ?? "";
+        await item.setFlag("world", "temsChainsawEngagedTarget", uuid);
+        await v160SyncMotorVisibility(item);
+        ui.notifications.info(`Grind engaged ${hitTarget.name}; Rip Through unlocked.`);
+      }
+      return;
+    }
+
+    if (n === "Rip Through") {
+      await item.setFlag("world", "temsChainsawEngagedTarget", "");
+      await v160SyncMotorVisibility(item);
+      return;
+    }
+  }
+
+  if (id === V160_IDS.ARGUS && n === "Sustained Fire") {
+    const braced = Boolean(item.getFlag("world", "temsArgusBraced") ?? false);
+    const names = ["Sustained Fire — Shot 2", "Sustained Fire — Shot 3"];
+    if (braced) names.push("Sustained Fire — Shot 4");
+    return v160RollFollowups(item, names);
+  }
+
+  if (id === V160_IDS.PARIS && n === "Burst Fire") {
+    return v160RollFollowups(item, ["Burst Fire — Shot 2", "Burst Fire — Shot 3"]);
+  }
+});
+
+Hooks.on("updateToken", async (tokenDocument, changes) => {
+  if (!("x" in changes || "y" in changes || "elevation" in changes)) return;
+  const actor = tokenDocument.actor;
+  if (!actor) return;
+  const argus = actor.items.find(i => i.system?.identifier === V160_IDS.ARGUS);
+  if (argus && Boolean(argus.getFlag("world", "temsArgusBraced") ?? false)) {
+    await v160SetArgusBraced(argus, false, {notify:false});
+    ui.notifications.info("Argus Class Steamknight — movement ended Brace.");
+  }
+});
+
+Hooks.on("updateCombat", async combat => {
+  const actor = combat?.combatant?.actor;
+  if (!actor) return;
+  const motor = actor.items.find(i => i.system?.identifier === V160_IDS.MOTOR);
+  if (!motor) return;
+  if (String(motor.getFlag("world", "temsChainsawEngagedTarget") ?? "")) {
+    await motor.setFlag("world", "temsChainsawEngagedTarget", "");
+    await v160SyncMotorVisibility(motor);
+  }
+});
+
+Hooks.on("createItem", async item => {
+  try {
+    if (item.system?.identifier === V160_IDS.MOTOR) await v160SyncMotorVisibility(item);
+    if (item.system?.identifier === V160_IDS.ARGUS) await v160SyncArgus(item);
+  } catch (err) {
+    console.warn("Tem's Weapons | v1.6 createItem sync failed", item, err);
+  }
+});
+
 /* ------------------------------------------------------------------------- */
 /* BUNDLED WEAPON INSTALLER                                                  */
 /* ------------------------------------------------------------------------- */
@@ -2412,7 +2657,10 @@ const BUNDLED_WEAPONS = [
   { path: "items/candy/kanabo-iron-maiden.json", identifier: "tems-candy-kanabo-iron-maiden", folder: "Candy" },
   { path: "items/candy/bouquet-of-roses.json", identifier: "tems-candy-bouquet-roses", folder: "Candy" },
   { path: "items/coral/jet-propelled-skateboard.json", identifier: "tems-coral-jet-skateboard", folder: "Coral" },
-  { path: "items/gaunt/berried-delight.json", identifier: "tems-gaunt-berried-delight", folder: "Gaunt" }
+  { path: "items/gaunt/berried-delight.json", identifier: "tems-gaunt-berried-delight", folder: "Gaunt" },
+  { path: "items/coral/motorbike-chainsaw-chaingun.json", identifier: "tems-motorbike-chainsaw-chaingun", folder: "Coral" },
+  { path: "items/fault/argus-steamknight.json", identifier: "tems-argus-steamknight", folder: "Fault" },
+  { path: "items/rival/paris-steamknight.json", identifier: "tems-paris-steamknight", folder: "Rival" }
 ];
 
 async function ensureItemFolder(name, parent=null) {
@@ -2561,6 +2809,8 @@ Hooks.once("ready", async () => {
         if (ident(item) === HEAVY.GUNLANCE) {
           await syncHeavyResource(item);
         }
+        if (item.system?.identifier === V160_IDS.MOTOR) await v160SyncMotorVisibility(item);
+        if (item.system?.identifier === V160_IDS.ARGUS) await v160SyncArgus(item);
       } catch (err) {
         console.warn("Tem's Weapons | Straightforward weapon initial sync failed", item, err);
       }
@@ -2584,6 +2834,8 @@ Hooks.once("ready", async () => {
       if (ident(item) === HEAVY.GUNLANCE) {
         await syncHeavyResource(item);
       }
+      if (item.system?.identifier === V160_IDS.MOTOR) await v160SyncMotorVisibility(item);
+      if (item.system?.identifier === V160_IDS.ARGUS) await v160SyncArgus(item);
     } catch (err) {
       console.warn("Tem's Weapons | World item migration failed", item, err);
     }

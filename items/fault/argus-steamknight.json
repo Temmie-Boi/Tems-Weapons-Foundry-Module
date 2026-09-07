@@ -1,0 +1,922 @@
+{
+  "name": "Argus Class Steamknight",
+  "type": "weapon",
+  "img": "systems/dnd5e/icons/svg/items/weapon.svg",
+  "system": {
+    "activities": {
+      "tkXj8USydVKfHEcJ": {
+        "type": "attack",
+        "_id": "tkXj8USydVKfHEcJ",
+        "img": "",
+        "sort": 100000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>A heavy long-range cannon shot.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 120,
+          "long": 480,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 2,
+              "denomination": 10,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Heavy Cannon"
+      },
+      "3S8Rk2iNW0aMyVcZ": {
+        "type": "attack",
+        "_id": "3S8Rk2iNW0aMyVcZ",
+        "img": "",
+        "sort": 200000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>First shot of sustained fire. Normally three shots; four while Braced.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Sustained Fire"
+      },
+      "TCPqt38jVucasgZY": {
+        "type": "attack",
+        "_id": "TCPqt38jVucasgZY",
+        "img": "",
+        "sort": 300000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic sustained-fire shot 2.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Sustained Fire \u2014 Shot 2"
+      },
+      "L3UawM5M2E7KvX4i": {
+        "type": "attack",
+        "_id": "L3UawM5M2E7KvX4i",
+        "img": "",
+        "sort": 400000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic sustained-fire shot 3.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Sustained Fire \u2014 Shot 3"
+      },
+      "KcxjpmVuZMhfuu5F": {
+        "type": "attack",
+        "_id": "KcxjpmVuZMhfuu5F",
+        "img": "",
+        "sort": 500000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic sustained-fire shot 4.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Sustained Fire \u2014 Shot 4"
+      },
+      "3Xwu10ycXIaSqyqo": {
+        "type": "utility",
+        "_id": "3Xwu10ycXIaSqyqo",
+        "img": "",
+        "sort": 600000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Choose a point within 120 ft. Creatures in a 15-ft radius make a Dexterity save. Roll 3d6 piercing, half on success. Save/template handling is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "3d6",
+          "name": "",
+          "prompt": false,
+          "visible": true
+        },
+        "name": "Suppressive Barrage"
+      },
+      "ribf4OHnstoyBnz3": {
+        "type": "utility",
+        "_id": "ribf4OHnstoyBnz3",
+        "img": "",
+        "sort": 700000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Brace the frame. Heavy Cannon gains +2 to attack and Sustained Fire gains a fourth shot until movement.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Brace"
+      },
+      "m9z3ujzrOfzUuUyV": {
+        "type": "utility",
+        "_id": "m9z3ujzrOfzUuUyV",
+        "img": "",
+        "sort": 800000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Move up to 15 ft. Movement is manual and ends Brace.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Advance"
+      },
+      "PG1eKl3vuqSHS4YW": {
+        "type": "attack",
+        "_id": "PG1eKl3vuqSHS4YW",
+        "img": "",
+        "sort": 900000,
+        "activation": {
+          "type": "reaction",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Reaction: when a creature enters or crosses the firing lane/range, make one Heavy Cannon attack. Trigger adjudication is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 120,
+          "long": 480,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 2,
+              "denomination": 10,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Overwatch"
+      }
+    },
+    "uses": {
+      "spent": 0,
+      "recovery": [],
+      "max": ""
+    },
+    "description": {
+      "value": "<h2>Argus Class Steamknight</h2><p>Slow, steady, sustained heavy fire.</p>\n<p><strong>Brace:</strong> Bonus Action. While Braced, Heavy Cannon gains +2 to attack and Sustained Fire fires four shots instead of three. Moving ends Brace.</p>\n<p><strong>Advance:</strong> Bonus Action, move up to 15 ft; movement is manual and ends Brace.</p>\n<p><strong>Suppressive Barrage:</strong> 15-ft radius within 120 ft, Dexterity save, 3d6 piercing on failure and half on success; save/template handling is manual.</p>",
+      "chat": "<p></p>"
+    },
+    "identifier": "tems-argus-steamknight",
+    "source": {
+      "revision": 1,
+      "rules": "2024"
+    },
+    "identified": true,
+    "unidentified": {
+      "description": ""
+    },
+    "container": null,
+    "quantity": 1,
+    "weight": {
+      "value": 0,
+      "units": "lb"
+    },
+    "price": {
+      "value": 0,
+      "denomination": "gp"
+    },
+    "rarity": "",
+    "attunement": "",
+    "attuned": false,
+    "equipped": false,
+    "crew": {
+      "value": []
+    },
+    "ammunition": {},
+    "armor": {},
+    "damage": {
+      "base": {
+        "types": [
+          "piercing"
+        ],
+        "custom": {
+          "enabled": false
+        },
+        "scaling": {
+          "number": 1
+        },
+        "number": 2,
+        "denomination": 10,
+        "bonus": ""
+      },
+      "versatile": {
+        "types": [],
+        "custom": {
+          "enabled": false
+        },
+        "scaling": {
+          "number": 1
+        }
+      }
+    },
+    "properties": [],
+    "proficient": null,
+    "range": {
+      "units": "ft",
+      "value": null,
+      "long": null,
+      "reach": null
+    },
+    "type": {
+      "value": "martialM",
+      "baseItem": ""
+    },
+    "mastery": ""
+  },
+  "effects": [],
+  "folder": null,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {
+    "world": {},
+    "dnd5e": {}
+  },
+  "_stats": {
+    "coreVersion": "14.366",
+    "systemId": "dnd5e",
+    "systemVersion": "5.3.2",
+    "compendiumSource": null,
+    "duplicateSource": null
+  }
+}

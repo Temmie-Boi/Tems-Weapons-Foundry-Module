@@ -1,0 +1,861 @@
+{
+  "name": "Paris Class Steamknight",
+  "type": "weapon",
+  "img": "systems/dnd5e/icons/svg/items/weapon.svg",
+  "system": {
+    "activities": {
+      "HUnjRggULMGxHewk": {
+        "type": "attack",
+        "_id": "HUnjRggULMGxHewk",
+        "img": "",
+        "sort": 100000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Move up to 20 ft, then make this attack. Movement is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 10,
+              "bonus": "",
+              "types": [
+                "slashing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "High-Speed Strike"
+      },
+      "V4W7MH5Lx6c6X2cL": {
+        "type": "attack",
+        "_id": "V4W7MH5Lx6c6X2cL",
+        "img": "",
+        "sort": 200000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>First shot of a three-shot burst.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 40,
+          "long": 120,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Burst Fire"
+      },
+      "k2Q9YGxYwiLt9IBX": {
+        "type": "attack",
+        "_id": "k2Q9YGxYwiLt9IBX",
+        "img": "",
+        "sort": 300000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic second Burst Fire shot.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 40,
+          "long": 120,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Burst Fire \u2014 Shot 2"
+      },
+      "BAvUN22SWbCv097U": {
+        "type": "attack",
+        "_id": "BAvUN22SWbCv097U",
+        "img": "",
+        "sort": 400000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic third Burst Fire shot.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 40,
+          "long": 120,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Burst Fire \u2014 Shot 3"
+      },
+      "HblIDZgKbXlrUuOu": {
+        "type": "utility",
+        "_id": "HblIDZgKbXlrUuOu",
+        "img": "",
+        "sort": 500000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Move up to 20 ft. Movement is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Jet Dash"
+      },
+      "tymLHR2Q7aHO6jsl": {
+        "type": "attack",
+        "_id": "tymLHR2Q7aHO6jsl",
+        "img": "",
+        "sort": 600000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Move up to 20 ft and make this attack at any point; does not provoke from the attacked target. Movement is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 40,
+          "long": 120,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 8,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Drive-By Attack"
+      },
+      "ICahYmZwY0TGva1h": {
+        "type": "utility",
+        "_id": "ICahYmZwY0TGva1h",
+        "img": "",
+        "sort": 700000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>After making an attack this turn, move 15 ft without opportunity attacks from the creature attacked. Movement is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Disengage Burst"
+      },
+      "wxZvxYpMd6c9fX9H": {
+        "type": "attack",
+        "_id": "wxZvxYpMd6c9fX9H",
+        "img": "",
+        "sort": 800000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Requires moving at least 20 ft this turn before use. Movement prerequisite is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 2,
+              "denomination": 10,
+              "bonus": "",
+              "types": [
+                "slashing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            },
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 8,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Alpha Strike"
+      }
+    },
+    "uses": {
+      "spent": 0,
+      "recovery": [],
+      "max": ""
+    },
+    "description": {
+      "value": "<h2>Paris Class Steamknight</h2><p>Speed is war: strike hard, strike fast, get out even faster.</p>\n<p><strong>High-Speed Strike:</strong> move up to 20 ft and make a 1d10 slashing attack.</p>\n<p><strong>Burst Fire:</strong> three 1d6 piercing attacks.</p>\n<p><strong>Jet Dash:</strong> Bonus Action, move up to 20 ft.</p>\n<p><strong>Drive-By Attack:</strong> move up to 20 ft and make a 1d8 piercing attack during movement; does not provoke from the attacked target.</p>\n<p><strong>Disengage Burst:</strong> after attacking, Bonus Action move 15 ft without opportunity attacks from the creature attacked.</p>\n<p><strong>Alpha Strike:</strong> after moving at least 20 ft this turn, deal 2d10 slashing + 1d8 piercing.</p>\n<p><em>Movement and movement prerequisites are manual riders.</em></p>",
+      "chat": "<p></p>"
+    },
+    "identifier": "tems-paris-steamknight",
+    "source": {
+      "revision": 1,
+      "rules": "2024"
+    },
+    "identified": true,
+    "unidentified": {
+      "description": ""
+    },
+    "container": null,
+    "quantity": 1,
+    "weight": {
+      "value": 0,
+      "units": "lb"
+    },
+    "price": {
+      "value": 0,
+      "denomination": "gp"
+    },
+    "rarity": "",
+    "attunement": "",
+    "attuned": false,
+    "equipped": false,
+    "crew": {
+      "value": []
+    },
+    "ammunition": {},
+    "armor": {},
+    "damage": {
+      "base": {
+        "types": [
+          "slashing"
+        ],
+        "custom": {
+          "enabled": false
+        },
+        "scaling": {
+          "number": 1
+        },
+        "number": 1,
+        "denomination": 10,
+        "bonus": ""
+      },
+      "versatile": {
+        "types": [],
+        "custom": {
+          "enabled": false
+        },
+        "scaling": {
+          "number": 1
+        }
+      }
+    },
+    "properties": [],
+    "proficient": null,
+    "range": {
+      "units": "ft",
+      "value": null,
+      "long": null,
+      "reach": null
+    },
+    "type": {
+      "value": "martialM",
+      "baseItem": ""
+    },
+    "mastery": ""
+  },
+  "effects": [],
+  "folder": null,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {
+    "world": {},
+    "dnd5e": {}
+  },
+  "_stats": {
+    "coreVersion": "14.366",
+    "systemId": "dnd5e",
+    "systemVersion": "5.3.2",
+    "compendiumSource": null,
+    "duplicateSource": null
+  }
+}

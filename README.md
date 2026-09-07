@@ -1,4 +1,4 @@
-# Tem's Weapons v1.2.8
+# Tem's Weapons v1.6.0
 
 Foundry VTT v14 / D&D5e 5.3.x
 
@@ -194,3 +194,12 @@ Movement/push riders that depend on table positioning are described on their act
 - **Gaunt — Berried Delight:** Judgement Cut, two-hit Rapid Draw, Sheathe Counter, Blink Slash, and Perfect Cut.
 
 Movement, forced movement, area placement, and some control riders are intentionally handled manually where Foundry automation would add unnecessary fragility.
+
+
+## v1.6.0 NPC weapon finale
+
+- **Motorbike / Chainsaw / Chaingun:** three-mode weapon with Motorbike mobility/ram options, Chainsaw pressure and Grind/Rip Through, and Chaingun Burst/Spin Up/Full Auto/Strafing Fire. Multi-hit attacks launch their internal follow-up rolls automatically.
+- **Argus Class Steamknight:** Heavy Cannon, three-shot Sustained Fire, Suppressive Barrage, Brace, Advance, and Overwatch. Brace grants +2 to Heavy Cannon attacks and a fourth Sustained Fire shot; moving ends Brace.
+- **Paris Class Steamknight:** High-Speed Strike, three-shot Burst Fire, Jet Dash, Drive-By Attack, Disengage Burst, and Alpha Strike. Movement riders are manual.
+
+Position-dependent movement, pushes, save areas, firing-lane triggers, and movement prerequisites remain manual where appropriate.

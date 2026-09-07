@@ -1,0 +1,2149 @@
+{
+  "name": "Motorbike / Chainsaw / Chaingun",
+  "type": "weapon",
+  "img": "systems/dnd5e/icons/svg/items/weapon.svg",
+  "system": {
+    "activities": {
+      "LYjOv3mDtk6HgiFR": {
+        "type": "utility",
+        "_id": "LYjOv3mDtk6HgiFR",
+        "img": "",
+        "sort": 100000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Shift the weapon into Motorbike Mode.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Motorbike Mode"
+      },
+      "yPDqHCEw6VtADi3y": {
+        "type": "utility",
+        "_id": "yPDqHCEw6VtADi3y",
+        "img": "",
+        "sort": 200000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Shift the weapon into Chainsaw Mode.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Chainsaw Mode"
+      },
+      "cVDxJtb5wnRSzlW7": {
+        "type": "utility",
+        "_id": "cVDxJtb5wnRSzlW7",
+        "img": "",
+        "sort": 300000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Shift the weapon into Chaingun Mode.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Chaingun Mode"
+      },
+      "foP1nayE0Xa4Yo9P": {
+        "type": "utility",
+        "_id": "foP1nayE0Xa4Yo9P",
+        "img": "",
+        "sort": 400000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Move up to 30 ft using the motorbike. Movement is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Drive"
+      },
+      "Ern5WMlOgsKUK50B": {
+        "type": "attack",
+        "_id": "Ern5WMlOgsKUK50B",
+        "img": "",
+        "sort": 500000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>After moving at least 10 ft straight toward the target, ram it. STR save on hit or push 10 ft. If the run-up was at least 20 ft, manually add 1d8 bludgeoning.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 2,
+              "denomination": 8,
+              "bonus": "",
+              "types": [
+                "bludgeoning"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Ram"
+      },
+      "Fb1XW4sPsNbaSd7G": {
+        "type": "utility",
+        "_id": "Fb1XW4sPsNbaSd7G",
+        "img": "",
+        "sort": 600000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Creatures within 5 ft make a Dexterity save; roll 2d6 bludgeoning, half on success. Save handling is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "2d6",
+          "name": "",
+          "prompt": false,
+          "visible": true
+        },
+        "name": "Burnout"
+      },
+      "HXUxbbPIMILwRKOU": {
+        "type": "attack",
+        "_id": "HXUxbbPIMILwRKOU",
+        "img": "",
+        "sort": 700000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>A heavy chainsaw slash.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 12,
+              "bonus": "",
+              "types": [
+                "slashing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Chainsaw Slash"
+      },
+      "wxaPaTNGbdDtW9I6": {
+        "type": "attack",
+        "_id": "wxaPaTNGbdDtW9I6",
+        "img": "",
+        "sort": 800000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>First strike of a two-hit revving cut.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 8,
+              "bonus": "",
+              "types": [
+                "slashing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Revving Cut"
+      },
+      "437GITGBmAYrJbzF": {
+        "type": "attack",
+        "_id": "437GITGBmAYrJbzF",
+        "img": "",
+        "sort": 900000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic second strike of Revving Cut.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 8,
+              "bonus": "",
+              "types": [
+                "slashing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Revving Cut \u2014 Second Strike"
+      },
+      "2Rzu4VEOum9JpRrt": {
+        "type": "attack",
+        "_id": "2Rzu4VEOum9JpRrt",
+        "img": "",
+        "sort": 1000000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>On a confirmed hit, engage the chainsaw with that target until the start of your next turn, unlocking Rip Through.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 10,
+              "bonus": "",
+              "types": [
+                "slashing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            },
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "slashing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Grind"
+      },
+      "M5KOU5SYp5UNXeVd": {
+        "type": "attack",
+        "_id": "M5KOU5SYp5UNXeVd",
+        "img": "",
+        "sort": 1100000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Requires a target currently engaged by Grind. Engagement ends after this attack.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 2,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "slashing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Rip Through"
+      },
+      "7WObvde5I4u19sC4": {
+        "type": "attack",
+        "_id": "7WObvde5I4u19sC4",
+        "img": "",
+        "sort": 1200000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>First shot of a three-shot burst.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Chaingun Burst"
+      },
+      "dK0jfzP1Lgc1D0ot": {
+        "type": "attack",
+        "_id": "dK0jfzP1Lgc1D0ot",
+        "img": "",
+        "sort": 1300000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic second burst shot.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Chaingun Burst \u2014 Shot 2"
+      },
+      "nM9uVOKaLHagAJ6f": {
+        "type": "attack",
+        "_id": "nM9uVOKaLHagAJ6f",
+        "img": "",
+        "sort": 1400000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic third burst shot.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Chaingun Burst \u2014 Shot 3"
+      },
+      "ZTxJgA6FaBCX504g": {
+        "type": "utility",
+        "_id": "ZTxJgA6FaBCX504g",
+        "img": "",
+        "sort": 1500000,
+        "activation": {
+          "type": "bonus",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Spin up the chaingun. Full Auto remains available while you stay in Chaingun Mode.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "self",
+          "override": false
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "",
+            "type": "self",
+            "special": ""
+          },
+          "override": false,
+          "prompt": false
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "roll": {
+          "formula": "",
+          "name": "",
+          "prompt": false,
+          "visible": false
+        },
+        "name": "Spin Up"
+      },
+      "yFB1pcjvalmr2gxC": {
+        "type": "attack",
+        "_id": "yFB1pcjvalmr2gxC",
+        "img": "",
+        "sort": 1600000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>First shot of a five-shot Full Auto sequence. Requires Spin Up.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Full Auto"
+      },
+      "kreLfMCIRfvGSM1J": {
+        "type": "attack",
+        "_id": "kreLfMCIRfvGSM1J",
+        "img": "",
+        "sort": 1700000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic Full Auto shot 2.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Full Auto \u2014 Shot 2"
+      },
+      "YNFXF40vEwlT3e2w": {
+        "type": "attack",
+        "_id": "YNFXF40vEwlT3e2w",
+        "img": "",
+        "sort": 1800000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic Full Auto shot 3.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Full Auto \u2014 Shot 3"
+      },
+      "P06gWZo1Iy8lqFRw": {
+        "type": "attack",
+        "_id": "P06gWZo1Iy8lqFRw",
+        "img": "",
+        "sort": 1900000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic Full Auto shot 4.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Full Auto \u2014 Shot 4"
+      },
+      "bxvsqJUmMCGkdQ1R": {
+        "type": "attack",
+        "_id": "bxvsqJUmMCGkdQ1R",
+        "img": "",
+        "sort": 2000000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic Full Auto shot 5.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Full Auto \u2014 Shot 5"
+      },
+      "88DM38VqwnTY0m3A": {
+        "type": "attack",
+        "_id": "88DM38VqwnTY0m3A",
+        "img": "",
+        "sort": 2100000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Move up to 15 ft and fire two shots during that movement. Movement is manual.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": null
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Strafing Fire"
+      },
+      "JHY9wVL91uB0whM7": {
+        "type": "attack",
+        "_id": "JHY9wVL91uB0whM7",
+        "img": "",
+        "sort": 2200000,
+        "activation": {
+          "type": "action",
+          "override": false,
+          "condition": ""
+        },
+        "consumption": {
+          "scaling": {
+            "allowed": false
+          },
+          "spellSlot": true,
+          "targets": []
+        },
+        "description": {
+          "chatFlavor": "<p>Automatic second Strafing Fire shot.</p>"
+        },
+        "duration": {
+          "units": "inst",
+          "concentration": false,
+          "override": false
+        },
+        "effects": [],
+        "flags": {},
+        "range": {
+          "units": "ft",
+          "value": 80,
+          "long": 240,
+          "special": "",
+          "override": true
+        },
+        "target": {
+          "template": {
+            "contiguous": false,
+            "stationary": false,
+            "units": "ft",
+            "type": ""
+          },
+          "affects": {
+            "choice": false,
+            "count": "1",
+            "type": "creature",
+            "special": ""
+          },
+          "override": false,
+          "prompt": true
+        },
+        "uses": {
+          "spent": 0,
+          "recovery": [],
+          "max": ""
+        },
+        "visibility": {
+          "level": {
+            "min": null,
+            "max": -1
+          },
+          "requireAttunement": false,
+          "requireIdentification": false,
+          "requireMagic": false,
+          "identifier": ""
+        },
+        "attack": {
+          "critical": {
+            "threshold": null
+          },
+          "flat": false,
+          "type": {
+            "value": "",
+            "classification": ""
+          },
+          "ability": "",
+          "bonus": ""
+        },
+        "damage": {
+          "critical": {
+            "bonus": ""
+          },
+          "includeBase": false,
+          "parts": [
+            {
+              "custom": {
+                "enabled": false,
+                "formula": ""
+              },
+              "number": 1,
+              "denomination": 6,
+              "bonus": "",
+              "types": [
+                "piercing"
+              ],
+              "scaling": {
+                "number": 1
+              }
+            }
+          ]
+        },
+        "name": "Strafing Fire \u2014 Shot 2"
+      }
+    },
+    "uses": {
+      "spent": 0,
+      "recovery": [],
+      "max": ""
+    },
+    "description": {
+      "value": "<h2>Motorbike / Chainsaw / Chaingun</h2><p>A three-mode transforming weapon platform.</p>\n<p><strong>Motorbike:</strong> Drive, Ram, Burnout.</p><p><strong>Chainsaw:</strong> Chainsaw Slash, Revving Cut, Grind, Rip Through.</p>\n<p><strong>Chaingun:</strong> Chaingun Burst, Spin Up, Full Auto, Strafing Fire.</p>\n<p><strong>Mode changes are Bonus Actions.</strong> Switching away from Chaingun ends Spin Up. Switching away from Chainsaw clears Grind engagement.</p>\n<p><em>Movement, push, and save riders are manual.</em></p>",
+      "chat": "<p></p>"
+    },
+    "identifier": "tems-motorbike-chainsaw-chaingun",
+    "source": {
+      "revision": 1,
+      "rules": "2024"
+    },
+    "identified": true,
+    "unidentified": {
+      "description": ""
+    },
+    "container": null,
+    "quantity": 1,
+    "weight": {
+      "value": 0,
+      "units": "lb"
+    },
+    "price": {
+      "value": 0,
+      "denomination": "gp"
+    },
+    "rarity": "",
+    "attunement": "",
+    "attuned": false,
+    "equipped": false,
+    "crew": {
+      "value": []
+    },
+    "ammunition": {},
+    "armor": {},
+    "damage": {
+      "base": {
+        "types": [
+          "bludgeoning"
+        ],
+        "custom": {
+          "enabled": false
+        },
+        "scaling": {
+          "number": 1
+        },
+        "number": 1,
+        "denomination": 8,
+        "bonus": ""
+      },
+      "versatile": {
+        "types": [],
+        "custom": {
+          "enabled": false
+        },
+        "scaling": {
+          "number": 1
+        }
+      }
+    },
+    "properties": [],
+    "proficient": null,
+    "range": {
+      "units": "ft",
+      "value": null,
+      "long": null,
+      "reach": null
+    },
+    "type": {
+      "value": "martialM",
+      "baseItem": ""
+    },
+    "mastery": ""
+  },
+  "effects": [],
+  "folder": null,
+  "ownership": {
+    "default": 0
+  },
+  "flags": {
+    "world": {},
+    "dnd5e": {}
+  },
+  "_stats": {
+    "coreVersion": "14.366",
+    "systemId": "dnd5e",
+    "systemVersion": "5.3.2",
+    "compendiumSource": null,
+    "duplicateSource": null
+  }
+}
