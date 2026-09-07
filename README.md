@@ -175,7 +175,7 @@ Claire's Might now owns its own activity flow. Its activities stay visible and v
 - Fixed Claire's Might automatic second strikes to bypass D&D5e's second-action `canUse` gate by rolling the follow-up attack directly. This fixes Ratchet and Phial Cascade throwing “Using this activity isn't currently possible.” after their first strike.
 - Migrates existing Claire's Might world and actor copies to add the Morph activity without replacing the item.
 
-## v1.5.0 weapon batch
+## v1.5.1 weapon batch
 
 - **Coral — Tire Iron & Tires:** Tire Iron, Launch Tire, Ricochet Tire, Tire Boost, and a 3-Tire reloadable resource.
 - **Candy — Hatchet:** fast 1d6 slashing thrown weapon (20/60).
@@ -186,7 +186,7 @@ Claire's Might now owns its own activity flow. Its activities stay visible and v
 
 Movement/push riders that depend on table positioning are described on their activities for the GM/player to resolve.
 
-## v1.5.0 additions
+## v1.5.1 additions
 
 - **Candy — Kanabo / Iron Maiden:** heavy impact, push/control riders, and Crushing Closure.
 - **Candy — Bouquet of Roses:** Rose Strike, Thorn Scatter, Petal Feint, and Stem Lash.

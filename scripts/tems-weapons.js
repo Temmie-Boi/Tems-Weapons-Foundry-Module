@@ -2221,6 +2221,41 @@ async function v140UseInternalFollowup(item, name) {
   }
 }
 
+// v1.5.1: Rapid Draw uses a direct second attack because a second Activity#use()
+// would be rejected by D&D5e's action-economy check. When that internal attack
+// hits a targeted creature, roll its own damage immediately so both cuts deal
+// their separate 1d8 slashing damage.
+async function v150UseRapidDrawFollowup(item, name) {
+  const activity = item?.system?.activities?.find?.(a => a.name === name);
+  if (!activity) {
+    console.warn(`Tem's Weapons | Rapid Draw follow-up activity missing: ${name}`);
+    return;
+  }
+
+  try {
+    if (typeof activity.rollAttack !== "function") {
+      throw new Error(`Activity ${name} does not expose rollAttack()`);
+    }
+
+    const rolls = await activity.rollAttack();
+    const targets = Array.from(game.user.targets ?? []);
+    const hit = targets.length && (rolls ?? []).some(roll =>
+      targets.some(token => attackHitsTarget(roll, token))
+    );
+
+    if (!hit) return;
+
+    if (typeof activity.rollDamage !== "function") {
+      throw new Error(`Activity ${name} does not expose rollDamage()`);
+    }
+
+    await activity.rollDamage();
+  } catch (err) {
+    console.error(`Tem's Weapons | Could not launch Rapid Draw follow-up: ${name}`, err);
+    ui.notifications.warn(`${name} could not be launched automatically. Check the console for details.`);
+  }
+}
+
 Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
   const item = getItem(activity);
   if (!item) return;
@@ -2308,7 +2343,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
   if (!item) return;
 
   if (item.system?.identifier === V150_IDS.BERRIED && activity?.name === "Rapid Draw") {
-    await v140UseInternalFollowup(item, "Rapid Draw — Second Cut");
+    await v150UseRapidDrawFollowup(item, "Rapid Draw — Second Cut");
   }
 });
 
