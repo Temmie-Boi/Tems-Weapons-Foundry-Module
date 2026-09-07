@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.3.5
+ * Tem's Weapons v1.3.8
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -707,16 +707,6 @@ function installChargeBladeItemUseWrapper() {
   const originalUse = proto.use;
 
   proto.use = async function(config={}, dialog={}, message={}) {
-    // The actor sheet can bubble a Claire's Might activity click into the owned
-    // Charge Blade item row. During that short Claire activity window, bypass
-    // the old Charge Blade item-use/chooser route completely. This is scoped by
-    // actor and time, so normal Charge Blade clicks outside the Claire activity
-    // resolution path are untouched.
-    if (isChargeBlade(this) && cmClaireActivityWindowActive(this)) {
-      console.debug("Tem's Weapons | Bypassed Charge Blade item-use during Claire's Might activity.");
-      return null;
-    }
-
     if (isChargeBlade(this)) {
       try {
         await expireShieldIfNeeded(this);
@@ -1462,46 +1452,16 @@ const CM_GUARD_EFFECT = "Claire's Might — Axe Guard Point";
 const CM_MAX_SURGES = 3;
 const cmVisibilityLocks = new Set();
 const cmCombatTurnCache = new Map();
-const cmClaireActivityBlockUntil = new Map();
 const cmDeferredRenderTimers = new Map();
 
 /**
- * Claire's Might changes several owned documents in response to one activity.
- * Synchronous actor-sheet rerenders during that click are unsafe: D&D5e can
- * continue processing against a freshly-replaced DOM tree and open the item
- * underneath the original pointer. Keep the document updates render-silent,
- * then refresh the actor sheet after the click stack has fully completed.
+ * Claire's Might deliberately does not rerender the actor sheet while an
+ * activity is resolving. The feat reads/writes Charge Blade state directly,
+ * but never invokes the Charge Blade item-use/chooser path.
  */
-function cmScheduleActorRender(actor, delay=200) {
-  if (!actor?.id || !actor.sheet?.rendered) return;
-  const old = cmDeferredRenderTimers.get(actor.id);
-  if (old) clearTimeout(old);
-  const timer = setTimeout(() => {
-    cmDeferredRenderTimers.delete(actor.id);
-    try {
-      if (actor.sheet?.rendered) actor.sheet.render({force:true});
-    } catch (err) {
-      console.warn("Tem's Weapons | Deferred Claire actor-sheet render failed", err);
-    }
-  }, delay);
-  cmDeferredRenderTimers.set(actor.id, timer);
-}
-
-function cmBeginClaireActivityWindow(actor, ms=1000) {
-  if (!actor?.id) return;
-  cmClaireActivityBlockUntil.set(actor.id, Date.now() + ms);
-}
-
-function cmClaireActivityWindowActive(blade) {
-  const actorId = blade?.actor?.id;
-  if (!actorId) return false;
-  const until = Number(cmClaireActivityBlockUntil.get(actorId) ?? 0);
-  if (!until) return false;
-  if (Date.now() > until) {
-    cmClaireActivityBlockUntil.delete(actorId);
-    return false;
-  }
-  return true;
+function cmScheduleActorRender(_actor, _delay=200) {
+  // Intentionally blank. Normal Foundry renders happen on their own after
+  // document updates; Claire's Might does not force a sheet render.
 }
 
 const CM_NAMES = Object.freeze({
@@ -1649,41 +1609,29 @@ function cmActivityVisible(name, feat, blade) {
   }
 }
 
-async function cmSyncVisibility(feat) {
-  if (!isClairesMight(feat) || !feat.actor) return;
-  const blade = getClaireChargeBlade(feat.actor);
-  const key = feat.uuid;
-  if (cmVisibilityLocks.has(key)) return;
-  cmVisibilityLocks.add(key);
-  try {
-    const updates = {};
-    for (const activity of feat.system.activities ?? []) {
-      const visible = cmActivityVisible(activity.name, feat, blade);
-      const curMin = activity.visibility?.level?.min ?? null;
-      const curMax = activity.visibility?.level?.max ?? null;
-      const wantMin = null;
-      const wantMax = visible ? null : -1;
-      if (curMin !== wantMin) updates[`system.activities.${activity.id}.visibility.level.min`] = wantMin;
-      if (curMax !== wantMax) updates[`system.activities.${activity.id}.visibility.level.max`] = wantMax;
-    }
-    if (Object.keys(updates).length) await feat.update(updates, {render:false});
-    // Never synchronously replace the actor/item sheet DOM from inside a Claire
-    // activity click. Refresh shortly after the current click stack finishes.
-    cmScheduleActorRender(feat.actor);
-    if (feat.sheet?.rendered) {
-      setTimeout(() => {
-        try { if (feat.sheet?.rendered) feat.sheet.render({force:true}); }
-        catch (err) { console.warn("Tem's Weapons | Deferred Claire item-sheet render failed", err); }
-      }, 200);
-    }
-  } finally {
-    cmVisibilityLocks.delete(key);
+async function cmResetActivityVisibility(feat) {
+  if (!isClairesMight(feat)) return;
+  const updates = {};
+  for (const activity of feat.system.activities ?? []) {
+    const curMin = activity.visibility?.level?.min ?? null;
+    const curMax = activity.visibility?.level?.max ?? null;
+    if (curMin !== null) updates[`system.activities.${activity.id}.visibility.level.min`] = null;
+    if (curMax !== null) updates[`system.activities.${activity.id}.visibility.level.max`] = null;
   }
+  if (Object.keys(updates).length) await feat.update(updates, {render:false});
+}
+
+// v1.3.8 architecture: Claire's activities stay visible. Legality is enforced
+// only by dnd5e.preUseActivity. This avoids rewriting the actor sheet/activity
+// list during clicks and completely separates Claire's feat UI from the
+// Charge Blade's item chooser.
+async function cmSyncVisibility(feat) {
+  await cmResetActivityVisibility(feat);
 }
 
 async function cmSyncActor(actor) {
   const feat = getClaireFeat(actor);
-  if (feat) await cmSyncVisibility(feat);
+  if (feat) await cmResetActivityVisibility(feat);
 }
 
 async function cmEndStance(feat, {notify=true}={}) {
@@ -1700,7 +1648,6 @@ async function cmEndStance(feat, {notify=true}={}) {
   await cmRemoveEffect(feat.actor, CM_STANCE_EFFECT);
   await cmRemoveEffect(feat.actor, CM_RATCHET_EFFECT);
   await cmRemoveEffect(feat.actor, CM_GUARD_EFFECT);
-  await cmSyncVisibility(feat);
   if (notify && wasActive) ui.notifications.info("Claire's Stance ended. Ratchet shut down.");
 }
 
@@ -1710,7 +1657,6 @@ async function cmResetForCombat(actor, combat) {
   await cmEndStance(feat, {notify:false});
   await cmSetSurges(feat, CM_MAX_SURGES);
   await feat.setFlag(SCOPE, "temsClaireCombatId", combat?.id ?? "");
-  await cmSyncVisibility(feat);
   ui.notifications.info("Claire's Might — 3 Surges ready for combat.");
 }
 
@@ -1743,7 +1689,6 @@ async function cmStartClaireTurn(actor) {
     if (blade && cm.ratchetActive) await cmRatchetTick(feat, blade);
     ui.notifications.info(`Claire's Stance — Turn ${nextTurn}/3.`);
   }
-  await cmSyncVisibility(feat);
 }
 
 function cmFindActorInCombat(combat, actorId) {
@@ -1809,18 +1754,6 @@ Hooks.on("deleteCombat", async combat => {
   }
 });
 
-// D&D5e can invoke an item-level use path directly from the actor sheet.
-// That path can open activity-choices.hbs without passing through our wrapped
-// Item5e#use method. Catch it at the system-supported preUseItem hook instead.
-// Returning false here prevents the stray Charge Blade item use before the
-// multi-activity chooser is configured, while consuming the one-shot guard.
-Hooks.on("dnd5e.preUseItem", (item) => {
-  if (!isChargeBlade(item)) return;
-  if (!cmClaireActivityWindowActive(item)) return;
-  console.debug("Tem's Weapons | Blocked Charge Blade preUseItem during Claire's Might activity.");
-  return false;
-});
-
 Hooks.on("dnd5e.preUseActivity", async activity => {
   const feat = getItem(activity);
   if (!isClairesMight(feat)) return;
@@ -1834,11 +1767,6 @@ Hooks.on("dnd5e.preUseActivity", async activity => {
     ui.notifications.warn("Claire's Might requires an owned Charge Blade on the same actor.");
     return false;
   }
-
-  // Guard the current click against the actor-sheet click-through that can
-  // otherwise open the Charge Blade's multi-activity chooser after this
-  // Claire's Might activity resolves.
-  cmBeginClaireActivityWindow(actor);
 
   if (n === CM_NAMES.STANCE) {
     if (!getActiveCombatForActor(actor)) {
@@ -1931,7 +1859,6 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
     cb.charge = Math.max(cb.charge, 3);
     await writeState(blade, cb, {renderActor:false});
     await cmApplyMarkerEffect(actor, feat, CM_STANCE_EFFECT);
-    await cmSyncVisibility(feat);
     ui.notifications.info(`Claire's Stance activated — Turn 1/3, ${cm.surges - 1} Surge${cm.surges - 1 === 1 ? "" : "s"} remaining, Charge ${cb.charge}/5.`);
     return;
   }
@@ -1943,7 +1870,6 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
       ratchetTurnKey:cmTurnKey(actor)
     }, {sync:false});
     await cmApplyMarkerEffect(actor, feat, CM_RATCHET_EFFECT);
-    await cmSyncVisibility(feat);
     ui.notifications.info("Ratchet engine engaged.");
     return;
   }
@@ -1959,7 +1885,6 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
     cb.phials = gained;
     cb.charge = 0;
     await writeState(blade, cb, {renderActor:false});
-    await cmSyncVisibility(feat);
     ui.notifications.info(`Axe Pump Load — loaded ${gained} Phials; remained in Axe Mode.`);
     return;
   }
@@ -2019,7 +1944,6 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     else if (hits >= 1) cb.charge = Math.max(cb.charge, 3);
     await writeState(blade, cb, {renderActor:false});
     await cmSetState(feat, {ratchetActive:true, ratchetHits:hits, ratchetTurnKey:key}, {sync:false});
-    await cmSyncVisibility(feat);
     ui.notifications.info(`Ratchet: ${hits}/2 confirmed hit${hits === 1 ? "" : "s"} this turn — Charge ${cb.charge}/5.`);
     return;
   }
@@ -2051,7 +1975,6 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
       }
       await cmSetState(feat, {cascadeHits:0}, {sync:false});
     }
-    await cmSyncVisibility(feat);
     return;
   }
 
@@ -2062,7 +1985,6 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
       await writeState(blade, cb, {renderActor:false});
       ui.notifications.info(`${n} hit: +1 Charge (${cb.charge}/5).`);
     }
-    await cmSyncVisibility(feat);
     return;
   }
 
@@ -2073,7 +1995,6 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
       await writeState(blade, cb, {renderActor:false});
       ui.notifications.info(`Boosted Axe Combo discharge hit: -1 Phial (${cb.phials}/5).`);
     }
-    await cmSyncVisibility(feat);
     return;
   }
 
@@ -2088,7 +2009,6 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     }
     await cmSetState(feat, {counterReady:false}, {sync:false});
     await cmRemoveEffect(actor, CM_GUARD_EFFECT);
-    await cmSyncVisibility(feat);
   }
 });
 
@@ -2117,28 +2037,11 @@ Hooks.on("dnd5e.rollDamage", async (rolls, data) => {
   cb.phials = 0;
   cb.mode = "sword";
   await writeState(blade, cb, {renderActor:false});
-  await cmSyncVisibility(feat);
   ui.notifications.info(`Earth-Shattering SAED: spent ${spent} Phial${spent === 1 ? "" : "s"}, returned to Sword Mode. Claire's Stance continues if time remains.`);
 });
 
-Hooks.on("updateItem", async (item, changes) => {
-  if (isChargeBlade(item) && item.actor) {
-    const flat = foundry.utils.flattenObject(changes ?? {});
-    if (Object.keys(flat).some(k => k.startsWith("flags.world.chargeBlade"))) {
-      await cmSyncActor(item.actor);
-    }
-  }
-  if (isClairesMight(item) && item.actor) {
-    const flat = foundry.utils.flattenObject(changes ?? {});
-    if (Object.keys(flat).some(k => k.startsWith("flags.world.temsClaire") || k.startsWith("system.uses"))) {
-      await cmSyncVisibility(item);
-    }
-  }
-});
-
 Hooks.on("createItem", async item => {
-  if (!item?.actor) return;
-  if (isClairesMight(item) || isChargeBlade(item)) await cmSyncActor(item.actor);
+  if (isClairesMight(item)) await cmResetActivityVisibility(item);
 });
 
 /* ------------------------------------------------------------------------- */
@@ -2251,8 +2154,7 @@ Hooks.once("ready", async () => {
     try {
       const surges = clamp(feat.getFlag(SCOPE, "temsClaireSurges") ?? CM_MAX_SURGES, 0, CM_MAX_SURGES);
       await cmSetSurges(feat, surges);
-      await cmSyncVisibility(feat);
-    } catch (err) {
+      } catch (err) {
       console.warn("Tem's Weapons | Claire's Might initial sync failed", actor, err);
     }
   }
@@ -2364,17 +2266,26 @@ Hooks.once("ready", async () => {
 
   for (const actor of game.actors) {
     for (const item of actor.items) {
-      if (!isChargeBlade(item)) continue;
-
       try {
-        await expireShieldIfNeeded(item);
-        await syncSwordShieldAC(item);
-        await syncActivityVisibility(item);
+        if (isChargeBlade(item)) {
+          await expireShieldIfNeeded(item);
+          await syncSwordShieldAC(item);
+          await syncActivityVisibility(item);
+        }
+        if (isClairesMight(item)) {
+          await cmResetActivityVisibility(item);
+        }
       } catch (err) {
         console.warn("Tem's Weapons | Initial sync failed", item, err);
       }
     }
   }
 
-  console.log("Tem's Weapons | v1.3.4 Ready");
+  for (const item of game.items) {
+    if (!isClairesMight(item)) continue;
+    try { await cmResetActivityVisibility(item); }
+    catch (err) { console.warn("Tem's Weapons | Claire's Might visibility reset failed", item, err); }
+  }
+
+  console.log("Tem's Weapons | v1.3.8 Ready");
 });
