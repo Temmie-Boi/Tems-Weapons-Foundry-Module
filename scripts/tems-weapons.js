@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.2.8
+ * Tem's Weapons v1.3.0
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -1428,6 +1428,623 @@ Hooks.on("dnd5e.rollDamage", async (rolls,data)=>{
   }
 });
 
+
+/* ------------------------------------------------------------------------- */
+/* CLAIRE'S MIGHT                                                            */
+/* ------------------------------------------------------------------------- */
+
+const CM_IDENTIFIER = "tems-claires-might";
+const CM_STANCE_EFFECT = "Claire's Stance";
+const CM_RATCHET_EFFECT = "Claire's Might — Ratchet";
+const CM_GUARD_EFFECT = "Claire's Might — Axe Guard Point";
+const CM_MAX_SURGES = 3;
+const cmVisibilityLocks = new Set();
+const cmCombatTurnCache = new Map();
+
+const CM_NAMES = Object.freeze({
+  STANCE: "Claire's Stance",
+  RATCHET_1: "Ratchet",
+  RATCHET_2: "Ratchet — Second Strike",
+  CASCADE_1: "Phial Cascade",
+  CASCADE_2: "Phial Cascade — Second Strike",
+  PUMP: "Axe Pump Load",
+  GUARD: "Axe Guard Point",
+  COUNTER: "Axe Counter",
+  SWORD_1: "Boosted Sword Combo",
+  SWORD_2: "Boosted Sword Combo — Second Slash",
+  AXE_1: "Boosted Axe Combo",
+  AXE_2: "Boosted Axe Combo — Discharge",
+  EARTH: "Earth-Shattering SAED"
+});
+
+function isClairesMight(item) {
+  return item?.type === "feat" && item?.system?.identifier === CM_IDENTIFIER;
+}
+
+function getClaireFeat(actor) {
+  return actor?.items?.find?.(isClairesMight) ?? null;
+}
+
+function getClaireChargeBlade(actor) {
+  return actor?.items?.find?.(isChargeBlade) ?? null;
+}
+
+function getActiveCombatForActor(actor) {
+  if (!actor) return null;
+  return game.combats?.find?.(c => c.started && c.combatants?.some?.(cb => cb.actor?.id === actor.id)) ?? null;
+}
+
+function cmTurnKey(actor) {
+  const combat = getActiveCombatForActor(actor);
+  if (!combat) return "no-combat";
+  return `${combat.id}:${combat.round ?? 0}:${combat.turn ?? -1}`;
+}
+
+function cmRead(feat) {
+  return {
+    surges: clamp(feat?.getFlag(SCOPE, "temsClaireSurges") ?? CM_MAX_SURGES, 0, CM_MAX_SURGES),
+    stanceActive: Boolean(feat?.getFlag(SCOPE, "temsClaireStanceActive") ?? false),
+    stanceTurn: clamp(feat?.getFlag(SCOPE, "temsClaireStanceTurn") ?? 0, 0, 3),
+    ratchetActive: Boolean(feat?.getFlag(SCOPE, "temsClaireRatchetActive") ?? false),
+    counterReady: Boolean(feat?.getFlag(SCOPE, "temsClaireCounterReady") ?? false)
+  };
+}
+
+async function cmRemoveEffect(actor, name) {
+  if (!actor) return;
+  const ids = actor.effects.filter(e => e.name === name).map(e => e.id).filter(Boolean);
+  if (!ids.length) return;
+  try { await actor.deleteEmbeddedDocuments("ActiveEffect", ids); }
+  catch (err) { console.warn(`Tem's Weapons | Claire effect cleanup race: ${name}`, err); }
+}
+
+async function cmApplyMarkerEffect(actor, feat, name) {
+  if (!actor || !feat) return;
+  await cmRemoveEffect(actor, name);
+  await actor.createEmbeddedDocuments("ActiveEffect", [{
+    name,
+    origin: feat.uuid,
+    disabled: false,
+    transfer: false,
+    duration: {},
+    changes: [],
+    flags: {"tems-weapons": {sourceItemId: feat.id}}
+  }]);
+}
+
+async function cmSetSurges(feat, value) {
+  const surges = clamp(value, 0, CM_MAX_SURGES);
+  await feat.update({
+    "flags.world.temsClaireSurges": surges,
+    "system.uses.max": String(CM_MAX_SURGES),
+    "system.uses.spent": CM_MAX_SURGES - surges
+  });
+  return surges;
+}
+
+async function cmSetState(feat, changes={}, {sync=true}={}) {
+  const update = {};
+  if ("surges" in changes) {
+    const surges = clamp(changes.surges, 0, CM_MAX_SURGES);
+    update["flags.world.temsClaireSurges"] = surges;
+    update["system.uses.max"] = String(CM_MAX_SURGES);
+    update["system.uses.spent"] = CM_MAX_SURGES - surges;
+  }
+  if ("stanceActive" in changes) update["flags.world.temsClaireStanceActive"] = Boolean(changes.stanceActive);
+  if ("stanceTurn" in changes) update["flags.world.temsClaireStanceTurn"] = clamp(changes.stanceTurn, 0, 3);
+  if ("ratchetActive" in changes) update["flags.world.temsClaireRatchetActive"] = Boolean(changes.ratchetActive);
+  if ("counterReady" in changes) update["flags.world.temsClaireCounterReady"] = Boolean(changes.counterReady);
+  if ("ratchetHits" in changes) update["flags.world.temsClaireRatchetHits"] = clamp(changes.ratchetHits, 0, 2);
+  if ("ratchetTurnKey" in changes) update["flags.world.temsClaireRatchetTurnKey"] = String(changes.ratchetTurnKey ?? "");
+  if ("cascadeHits" in changes) update["flags.world.temsClaireCascadeHits"] = clamp(changes.cascadeHits, 0, 2);
+  if ("cascadeTurnKey" in changes) update["flags.world.temsClaireCascadeTurnKey"] = String(changes.cascadeTurnKey ?? "");
+
+  if (Object.keys(update).length) await feat.update(update);
+  if (sync) await cmSyncVisibility(feat);
+}
+
+function cmActivityVisible(name, feat, blade) {
+  if (!feat?.actor || !blade) return true;
+  const cm = cmRead(feat);
+  const cb = readState(blade);
+  const inCombat = Boolean(getActiveCombatForActor(feat.actor));
+
+  if (name === CM_NAMES.STANCE) return inCombat && !cm.stanceActive && cm.surges >= 1;
+  if (!cm.stanceActive) return false;
+
+  switch (name) {
+    case CM_NAMES.RATCHET_1:
+    case CM_NAMES.RATCHET_2:
+      return true;
+    case CM_NAMES.CASCADE_1:
+    case CM_NAMES.CASCADE_2:
+    case CM_NAMES.SWORD_1:
+    case CM_NAMES.SWORD_2:
+      return cb.mode === "sword";
+    case CM_NAMES.PUMP:
+      return cb.mode === "axe" && cb.charge >= 3;
+    case CM_NAMES.GUARD:
+      return cb.mode === "axe";
+    case CM_NAMES.COUNTER:
+      return cb.mode === "axe" && cm.counterReady;
+    case CM_NAMES.AXE_1:
+      return cb.mode === "axe";
+    case CM_NAMES.AXE_2:
+      return cb.mode === "axe" && cb.phials >= 1;
+    case CM_NAMES.EARTH:
+      return cb.mode === "axe" && cb.shieldCharged && cb.phials >= 1 && cm.surges >= 1;
+    default:
+      return true;
+  }
+}
+
+async function cmSyncVisibility(feat) {
+  if (!isClairesMight(feat) || !feat.actor) return;
+  const blade = getClaireChargeBlade(feat.actor);
+  const key = feat.uuid;
+  if (cmVisibilityLocks.has(key)) return;
+  cmVisibilityLocks.add(key);
+  try {
+    const updates = {};
+    for (const activity of feat.system.activities ?? []) {
+      const visible = cmActivityVisible(activity.name, feat, blade);
+      const curMin = activity.visibility?.level?.min ?? null;
+      const curMax = activity.visibility?.level?.max ?? null;
+      const wantMin = null;
+      const wantMax = visible ? null : -1;
+      if (curMin !== wantMin) updates[`system.activities.${activity.id}.visibility.level.min`] = wantMin;
+      if (curMax !== wantMax) updates[`system.activities.${activity.id}.visibility.level.max`] = wantMax;
+    }
+    if (Object.keys(updates).length) await feat.update(updates);
+    if (feat.sheet?.rendered) feat.sheet.render({force:true});
+    if (feat.actor?.sheet?.rendered) feat.actor.sheet.render({force:true});
+  } finally {
+    cmVisibilityLocks.delete(key);
+  }
+}
+
+async function cmSyncActor(actor) {
+  const feat = getClaireFeat(actor);
+  if (feat) await cmSyncVisibility(feat);
+}
+
+async function cmEndStance(feat, {notify=true}={}) {
+  if (!feat?.actor) return;
+  const wasActive = cmRead(feat).stanceActive;
+  await cmSetState(feat, {
+    stanceActive:false,
+    stanceTurn:0,
+    ratchetActive:false,
+    counterReady:false,
+    ratchetHits:0,
+    cascadeHits:0
+  }, {sync:false});
+  await cmRemoveEffect(feat.actor, CM_STANCE_EFFECT);
+  await cmRemoveEffect(feat.actor, CM_RATCHET_EFFECT);
+  await cmRemoveEffect(feat.actor, CM_GUARD_EFFECT);
+  await cmSyncVisibility(feat);
+  if (notify && wasActive) ui.notifications.info("Claire's Stance ended. Ratchet shut down.");
+}
+
+async function cmResetForCombat(actor, combat) {
+  const feat = getClaireFeat(actor);
+  if (!feat) return;
+  await cmEndStance(feat, {notify:false});
+  await cmSetSurges(feat, CM_MAX_SURGES);
+  await feat.setFlag(SCOPE, "temsClaireCombatId", combat?.id ?? "");
+  await cmSyncVisibility(feat);
+  ui.notifications.info("Claire's Might — 3 Surges ready for combat.");
+}
+
+async function cmRatchetTick(feat, blade) {
+  if (!feat || !blade || !cmRead(feat).ratchetActive) return;
+  const cb = readState(blade);
+  const before = cb.charge;
+  if (cb.charge < 3) cb.charge = 3;
+  else if (cb.charge < 5) cb.charge = 5;
+  else return; // Red: engine idles.
+  await writeState(blade, cb);
+  ui.notifications.info(`Ratchet engine: Charge ${before} → ${cb.charge}.`);
+}
+
+async function cmStartClaireTurn(actor) {
+  const feat = getClaireFeat(actor);
+  if (!feat) return;
+  const blade = getClaireChargeBlade(actor);
+  const cm = cmRead(feat);
+
+  // A leftover Axe Counter is no longer an immediate follow-up once Claire's turn begins.
+  if (cm.counterReady) {
+    await cmSetState(feat, {counterReady:false}, {sync:false});
+    await cmRemoveEffect(actor, CM_GUARD_EFFECT);
+  }
+
+  if (cm.stanceActive) {
+    const nextTurn = clamp(cm.stanceTurn + 1, 1, 3);
+    await cmSetState(feat, {stanceTurn:nextTurn}, {sync:false});
+    if (blade && cm.ratchetActive) await cmRatchetTick(feat, blade);
+    ui.notifications.info(`Claire's Stance — Turn ${nextTurn}/3.`);
+  }
+  await cmSyncVisibility(feat);
+}
+
+function cmFindActorInCombat(combat, actorId) {
+  return combat?.combatants?.find?.(c => c.actor?.id === actorId)?.actor ?? game.actors?.get?.(actorId) ?? null;
+}
+
+async function cmHandleCombatTurn(combat) {
+  if (!combat?.started) return;
+  const current = combat.combatant;
+  const currentActorId = current?.actor?.id ?? null;
+  const turnKey = `${combat.round ?? 0}:${combat.turn ?? -1}:${current?.id ?? "none"}`;
+  const previous = cmCombatTurnCache.get(combat.id);
+  if (previous?.turnKey === turnKey) return;
+
+  if (previous?.actorId) {
+    const prevActor = cmFindActorInCombat(combat, previous.actorId);
+    const prevFeat = getClaireFeat(prevActor);
+    if (prevFeat) {
+      const cm = cmRead(prevFeat);
+      if (cm.stanceActive && cm.stanceTurn >= 3) await cmEndStance(prevFeat);
+    }
+  }
+
+  cmCombatTurnCache.set(combat.id, {turnKey, actorId:currentActorId});
+  if (current?.actor) await cmStartClaireTurn(current.actor);
+}
+
+Hooks.on("combatStart", async combat => {
+  const seen = new Set();
+  for (const combatant of combat.combatants ?? []) {
+    const actor = combatant.actor;
+    if (!actor || seen.has(actor.id)) continue;
+    seen.add(actor.id);
+    if (getClaireFeat(actor)) await cmResetForCombat(actor, combat);
+  }
+  const current = combat.combatant;
+  cmCombatTurnCache.set(combat.id, {
+    turnKey:`${combat.round ?? 0}:${combat.turn ?? -1}:${current?.id ?? "none"}`,
+    actorId:current?.actor?.id ?? null
+  });
+});
+
+Hooks.on("createCombatant", async combatant => {
+  const combat = combatant?.parent;
+  if (!combat?.started || !combatant.actor || !getClaireFeat(combatant.actor)) return;
+  await cmResetForCombat(combatant.actor, combat);
+});
+
+Hooks.on("updateCombat", async (combat, changes) => {
+  if (!("turn" in (changes ?? {}) || "round" in (changes ?? {}))) return;
+  await cmHandleCombatTurn(combat);
+});
+
+Hooks.on("deleteCombat", async combat => {
+  cmCombatTurnCache.delete(combat.id);
+  const seen = new Set();
+  for (const combatant of combat.combatants ?? []) {
+    const actor = combatant.actor;
+    if (!actor || seen.has(actor.id)) continue;
+    seen.add(actor.id);
+    const feat = getClaireFeat(actor);
+    if (feat) await cmEndStance(feat, {notify:false});
+  }
+});
+
+Hooks.on("dnd5e.preUseActivity", async activity => {
+  const feat = getItem(activity);
+  if (!isClairesMight(feat)) return;
+  const actor = feat.actor;
+  const blade = getClaireChargeBlade(actor);
+  const cm = cmRead(feat);
+  const cb = blade ? readState(blade) : null;
+  const n = activity.name;
+
+  if (!actor || !blade) {
+    ui.notifications.warn("Claire's Might requires an owned Charge Blade on the same actor.");
+    return false;
+  }
+
+  if (n === CM_NAMES.STANCE) {
+    if (!getActiveCombatForActor(actor)) {
+      ui.notifications.warn("Claire's Stance can only be activated while Claire is in an active combat.");
+      return false;
+    }
+    if (cm.stanceActive) {
+      ui.notifications.warn("Claire's Stance is already active.");
+      return false;
+    }
+    if (cm.surges < 1) {
+      ui.notifications.warn("Claire's Might has no Surges remaining this combat.");
+      return false;
+    }
+    return;
+  }
+
+  if (!cm.stanceActive) {
+    ui.notifications.warn(`${n} requires Claire's Stance.`);
+    return false;
+  }
+
+  if ([CM_NAMES.CASCADE_1, CM_NAMES.CASCADE_2, CM_NAMES.SWORD_1, CM_NAMES.SWORD_2].includes(n) && cb.mode !== "sword") {
+    ui.notifications.warn(`${n} requires Sword Mode.`);
+    return false;
+  }
+
+  if ([CM_NAMES.PUMP, CM_NAMES.GUARD, CM_NAMES.COUNTER, CM_NAMES.AXE_1, CM_NAMES.AXE_2, CM_NAMES.EARTH].includes(n) && cb.mode !== "axe") {
+    ui.notifications.warn(`${n} requires Axe Mode.`);
+    return false;
+  }
+
+  if (n === CM_NAMES.PUMP && cb.charge < 3) {
+    ui.notifications.warn("Axe Pump Load requires at least 3 Charge.");
+    return false;
+  }
+
+  if (n === CM_NAMES.COUNTER) {
+    if (!cm.counterReady) {
+      ui.notifications.warn("Axe Counter is only available immediately after a successful Axe Guard Point.");
+      return false;
+    }
+    if (cb.phials < 1) {
+      ui.notifications.warn("Axe Counter requires at least 1 loaded Phial.");
+      return false;
+    }
+  }
+
+  if (n === CM_NAMES.AXE_2 && cb.phials < 1) {
+    ui.notifications.warn("Boosted Axe Combo's discharge requires at least 1 loaded Phial.");
+    return false;
+  }
+
+  if (n === CM_NAMES.EARTH) {
+    if (!cb.shieldCharged) {
+      ui.notifications.warn("Earth-Shattering SAED requires a charged shield.");
+      return false;
+    }
+    if (cb.phials < 1) {
+      ui.notifications.warn("Earth-Shattering SAED requires at least 1 loaded Phial.");
+      return false;
+    }
+    if (cm.surges < 1) {
+      ui.notifications.warn("Earth-Shattering SAED requires 1 additional Surge.");
+      return false;
+    }
+  }
+});
+
+Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
+  const feat = getItem(activity);
+  if (!isClairesMight(feat)) return;
+  const actor = feat.actor;
+  const blade = getClaireChargeBlade(actor);
+  if (!actor || !blade) return;
+  const n = activity.name;
+
+  if (n === CM_NAMES.STANCE) {
+    const cm = cmRead(feat);
+    await cmSetState(feat, {
+      surges:cm.surges - 1,
+      stanceActive:true,
+      stanceTurn:1,
+      ratchetActive:false,
+      counterReady:false,
+      ratchetHits:0,
+      cascadeHits:0
+    }, {sync:false});
+    const cb = readState(blade);
+    cb.charge = Math.max(cb.charge, 3);
+    await writeState(blade, cb);
+    await cmApplyMarkerEffect(actor, feat, CM_STANCE_EFFECT);
+    await cmSyncVisibility(feat);
+    ui.notifications.info(`Claire's Stance activated — Turn 1/3, ${cm.surges - 1} Surge${cm.surges - 1 === 1 ? "" : "s"} remaining, Charge ${cb.charge}/5.`);
+    return;
+  }
+
+  if (n === CM_NAMES.RATCHET_1) {
+    await cmSetState(feat, {
+      ratchetActive:true,
+      ratchetHits:0,
+      ratchetTurnKey:cmTurnKey(actor)
+    }, {sync:false});
+    await cmApplyMarkerEffect(actor, feat, CM_RATCHET_EFFECT);
+    await cmSyncVisibility(feat);
+    ui.notifications.info("Ratchet engine engaged.");
+    return;
+  }
+
+  if (n === CM_NAMES.CASCADE_1) {
+    await cmSetState(feat, {cascadeHits:0, cascadeTurnKey:cmTurnKey(actor)}, {sync:false});
+    return;
+  }
+
+  if (n === CM_NAMES.PUMP) {
+    const cb = readState(blade);
+    const gained = cb.charge >= 5 ? 5 : 3;
+    cb.phials = gained;
+    cb.charge = 0;
+    await writeState(blade, cb);
+    await cmSyncVisibility(feat);
+    ui.notifications.info(`Axe Pump Load — loaded ${gained} Phials; remained in Axe Mode.`);
+    return;
+  }
+
+  if (n === CM_NAMES.GUARD) {
+    await cmRemoveEffect(actor, CM_GUARD_EFFECT);
+    await actor.createEmbeddedDocuments("ActiveEffect", [{
+      name: CM_GUARD_EFFECT,
+      origin: feat.uuid,
+      disabled:false,
+      transfer:false,
+      duration:{seconds:6, rounds:1},
+      changes:[{
+        key:"system.attributes.ac.bonus",
+        mode:CONST.ACTIVE_EFFECT_MODES.ADD,
+        value:"2",
+        priority:30
+      }],
+      flags:{"tems-weapons":{sourceItemId:feat.id}}
+    }]);
+    await cmSetState(feat, {counterReady:true});
+    ui.notifications.info("Axe Guard Point: +2 AC. If this turns the triggering hit into a miss, use Axe Counter immediately.");
+    return;
+  }
+
+  if (n === CM_NAMES.EARTH) {
+    const cm = cmRead(feat);
+    await cmSetState(feat, {surges:cm.surges - 1});
+    ui.notifications.info(`Earth-Shattering SAED initiated — 1 Surge spent (${cm.surges - 1} remaining).`);
+  }
+});
+
+Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
+  const activity = data?.subject;
+  const feat = getItem(activity);
+  if (!isClairesMight(feat)) return;
+  const actor = feat.actor;
+  const blade = getClaireChargeBlade(actor);
+  if (!actor || !blade) return;
+
+  const targets = Array.from(game.user.targets ?? []);
+  const hit = targets.length && (rolls ?? []).some(roll => targets.some(token => attackHitsTarget(roll, token)));
+  const n = activity.name;
+
+  if (!targets.length) {
+    ui.notifications.warn(`${n} rolled with no target selected; Claire's Might hit-based automation could not confirm a hit.`);
+  }
+
+  if ([CM_NAMES.RATCHET_1, CM_NAMES.RATCHET_2].includes(n)) {
+    const key = cmTurnKey(actor);
+    const storedKey = String(feat.getFlag(SCOPE,"temsClaireRatchetTurnKey") ?? "");
+    let hits = storedKey === key ? clamp(feat.getFlag(SCOPE,"temsClaireRatchetHits") ?? 0, 0, 2) : 0;
+    if (hit) hits = clamp(hits + 1, 0, 2);
+    const cb = readState(blade);
+    if (hits >= 2) cb.charge = Math.max(cb.charge, 4);
+    else if (hits >= 1) cb.charge = Math.max(cb.charge, 3);
+    await writeState(blade, cb);
+    await cmSetState(feat, {ratchetActive:true, ratchetHits:hits, ratchetTurnKey:key}, {sync:false});
+    await cmSyncVisibility(feat);
+    ui.notifications.info(`Ratchet: ${hits}/2 confirmed hit${hits === 1 ? "" : "s"} this turn — Charge ${cb.charge}/5.`);
+    return;
+  }
+
+  if ([CM_NAMES.CASCADE_1, CM_NAMES.CASCADE_2].includes(n)) {
+    const key = cmTurnKey(actor);
+    const storedKey = String(feat.getFlag(SCOPE,"temsClaireCascadeTurnKey") ?? "");
+    let hits = storedKey === key ? clamp(feat.getFlag(SCOPE,"temsClaireCascadeHits") ?? 0, 0, 2) : 0;
+    const cb = readState(blade);
+    if (hit) {
+      hits = clamp(hits + 1, 0, 2);
+      cb.charge = clamp(cb.charge + 1, 0, 5);
+      await writeState(blade, cb);
+    }
+    await cmSetState(feat, {cascadeHits:hits, cascadeTurnKey:key}, {sync:false});
+
+    if (n === CM_NAMES.CASCADE_2) {
+      const live = readState(blade);
+      if (hits >= 1 && live.charge >= 3) {
+        const gained = live.charge >= 5 ? 5 : 3;
+        live.phials = gained;
+        live.charge = 0;
+        await writeState(blade, live);
+        ui.notifications.info(`Phial Cascade: ${hits} hit${hits === 1 ? "" : "s"}; automatically loaded ${gained} Phials.`);
+      } else if (hits >= 1) {
+        ui.notifications.info(`Phial Cascade hit, but Charge ${live.charge}/5 is below the loading threshold.`);
+      } else {
+        ui.notifications.info("Phial Cascade missed — no automatic load.");
+      }
+      await cmSetState(feat, {cascadeHits:0}, {sync:false});
+    }
+    await cmSyncVisibility(feat);
+    return;
+  }
+
+  if ([CM_NAMES.SWORD_1, CM_NAMES.SWORD_2].includes(n)) {
+    if (hit) {
+      const cb = readState(blade);
+      cb.charge = clamp(cb.charge + 1, 0, 5);
+      await writeState(blade, cb);
+      ui.notifications.info(`${n} hit: +1 Charge (${cb.charge}/5).`);
+    }
+    await cmSyncVisibility(feat);
+    return;
+  }
+
+  if (n === CM_NAMES.AXE_2) {
+    if (hit) {
+      const cb = readState(blade);
+      cb.phials = clamp(cb.phials - 1, 0, 5);
+      await writeState(blade, cb);
+      ui.notifications.info(`Boosted Axe Combo discharge hit: -1 Phial (${cb.phials}/5).`);
+    }
+    await cmSyncVisibility(feat);
+    return;
+  }
+
+  if (n === CM_NAMES.COUNTER) {
+    if (hit) {
+      const cb = readState(blade);
+      cb.phials = clamp(cb.phials - 1, 0, 5);
+      await writeState(blade, cb);
+      ui.notifications.info(`Axe Counter hit: -1 Phial (${cb.phials}/5).`);
+    } else {
+      ui.notifications.info("Axe Counter missed — no Phial spent.");
+    }
+    await cmSetState(feat, {counterReady:false}, {sync:false});
+    await cmRemoveEffect(actor, CM_GUARD_EFFECT);
+    await cmSyncVisibility(feat);
+  }
+});
+
+Hooks.on("dnd5e.rollDamage", async (rolls, data) => {
+  const activity = data?.subject;
+  const feat = getItem(activity);
+  if (!isClairesMight(feat) || activity?.name !== CM_NAMES.EARTH) return;
+  const actor = feat.actor;
+  const blade = getClaireChargeBlade(actor);
+  if (!actor || !blade) return;
+
+  const cb = readState(blade);
+  const spent = cb.phials;
+  if (spent > 0) {
+    const force = await new CONFIG.Dice.DamageRoll(
+      `${spent * 2}d8`,
+      actor.getRollData?.() ?? {},
+      {type:"force"}
+    ).evaluate();
+    await force.toMessage({
+      speaker:ChatMessage.getSpeaker({actor}),
+      flavor:`${feat.name} — Earth-Shattering SAED Phial Burst (${spent} Phial${spent === 1 ? "" : "s"})`
+    });
+  }
+
+  cb.phials = 0;
+  cb.mode = "sword";
+  await writeState(blade, cb);
+  await cmSyncVisibility(feat);
+  ui.notifications.info(`Earth-Shattering SAED: spent ${spent} Phial${spent === 1 ? "" : "s"}, returned to Sword Mode. Claire's Stance continues if time remains.`);
+});
+
+Hooks.on("updateItem", async (item, changes) => {
+  if (isChargeBlade(item) && item.actor) {
+    const flat = foundry.utils.flattenObject(changes ?? {});
+    if (Object.keys(flat).some(k => k.startsWith("flags.world.chargeBlade"))) {
+      await cmSyncActor(item.actor);
+    }
+  }
+  if (isClairesMight(item) && item.actor) {
+    const flat = foundry.utils.flattenObject(changes ?? {});
+    if (Object.keys(flat).some(k => k.startsWith("flags.world.temsClaire") || k.startsWith("system.uses"))) {
+      await cmSyncVisibility(item);
+    }
+  }
+});
+
+Hooks.on("createItem", async item => {
+  if (!item?.actor) return;
+  if (isClairesMight(item) || isChargeBlade(item)) await cmSyncActor(item.actor);
+});
+
 /* ------------------------------------------------------------------------- */
 /* BUNDLED WEAPON INSTALLER                                                  */
 /* ------------------------------------------------------------------------- */
@@ -1435,6 +2052,7 @@ Hooks.on("dnd5e.rollDamage", async (rolls,data)=>{
 const TEMS_FOLDER_NAME = "Tem's weapons";
 
 const BUNDLED_WEAPONS = [
+  { path: "items/claire/claires-might.json", identifier: "tems-claires-might", folder: null },
   { path: "items/charge-blade.json", identifier: "charge-blade", folder: null, icon: "assets/charge-blade.png" },
   { path: "items/coral/greatsword.json", identifier: "tems-coral-greatsword", folder: "Coral" },
   { path: "items/gaunt/bombs.json", identifier: "tems-gaunt-bombs", folder: "Gaunt" },
@@ -1529,6 +2147,19 @@ async function installBundledWeapons() {
 Hooks.once("ready", async () => {
   installChargeBladeItemUseWrapper();
   await installBundledWeapons();
+
+  // Sync Claire's Might on actors without changing existing Charge Blade state.
+  for (const actor of game.actors) {
+    const feat = getClaireFeat(actor);
+    if (!feat) continue;
+    try {
+      const surges = clamp(feat.getFlag(SCOPE, "temsClaireSurges") ?? CM_MAX_SURGES, 0, CM_MAX_SURGES);
+      await cmSetSurges(feat, surges);
+      await cmSyncVisibility(feat);
+    } catch (err) {
+      console.warn("Tem's Weapons | Claire's Might initial sync failed", actor, err);
+    }
+  }
 
   // Sync straightforward weapon effects already embedded on actors.
   for (const actor of game.actors) {
