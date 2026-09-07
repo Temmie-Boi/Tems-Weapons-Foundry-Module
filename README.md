@@ -155,3 +155,8 @@ Adds the Claire's Might feat and Combat Tracker-driven Charge Blade stance autom
 
 ## v1.3.3 — Claire activity routing fix
 Suppresses forced Charge Blade actor-sheet rerenders while Claire's Might is resolving. This prevents the originating Claire activity click from being invalidated and falling through to the Charge Blade item chooser.
+
+
+### v1.3.6
+- Blocks the stray Charge Blade activity chooser at the official `dnd5e.preUseItem` hook after a Claire's Might activity.
+- Keeps the guard one-shot and actor-scoped so ordinary Charge Blade use remains unchanged.

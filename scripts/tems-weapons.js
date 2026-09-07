@@ -1484,7 +1484,7 @@ function cmScheduleActorRender(actor, delay=200) {
   cmDeferredRenderTimers.set(actor.id, timer);
 }
 
-function cmArmChargeBladeUseSuppression(actor, ms=750) {
+function cmArmChargeBladeUseSuppression(actor, ms=1500) {
   if (!actor?.id) return;
   cmChargeBladeUseSuppressUntil.set(actor.id, Date.now() + ms);
 }
@@ -1806,6 +1806,18 @@ Hooks.on("deleteCombat", async combat => {
     const feat = getClaireFeat(actor);
     if (feat) await cmEndStance(feat, {notify:false});
   }
+});
+
+// D&D5e can invoke an item-level use path directly from the actor sheet.
+// That path can open activity-choices.hbs without passing through our wrapped
+// Item5e#use method. Catch it at the system-supported preUseItem hook instead.
+// Returning false here prevents the stray Charge Blade item use before the
+// multi-activity chooser is configured, while consuming the one-shot guard.
+Hooks.on("dnd5e.preUseItem", (item) => {
+  if (!isChargeBlade(item)) return;
+  if (!cmShouldSuppressChargeBladeUse(item)) return;
+  console.warn("Tem's Weapons | Blocked stray Charge Blade item-use after Claire's Might (preUseItem).");
+  return false;
 });
 
 Hooks.on("dnd5e.preUseActivity", async activity => {
