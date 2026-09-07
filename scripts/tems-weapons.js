@@ -732,6 +732,20 @@ function installChargeBladeItemUseWrapper() {
       }
     }
 
+    // Claire's Might also relies on dynamic activity visibility. Without a
+    // pre-use sync, D&D5e can build its activity chooser from stale prepared
+    // data (for example, still seeing only Claire's Stance immediately after
+    // the Stance has activated). Synchronize the feat before the system asks
+    // activity.canUse which options belong in the picker.
+    if (isClairesMight(this)) {
+      try {
+        await cmSyncVisibility(this);
+        this.prepareData?.();
+      } catch (err) {
+        console.error("Tem's Weapons | Claire's Might pre-use visibility sync failed", err);
+      }
+    }
+
     return originalUse.call(this, config, dialog, message);
   };
 

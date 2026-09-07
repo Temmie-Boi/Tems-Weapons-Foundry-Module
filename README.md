@@ -157,15 +157,15 @@ Adds the Claire's Might feat and Combat Tracker-driven Charge Blade stance autom
 Suppresses forced Charge Blade actor-sheet rerenders while Claire's Might is resolving. This prevents the originating Claire activity click from being invalidated and falling through to the Charge Blade item chooser.
 
 
-### v1.3.9
+### v1.3.10
 - Blocks the stray Charge Blade activity chooser at the official `dnd5e.preUseItem` hook after a Claire's Might activity.
 - Keeps the guard one-shot and actor-scoped so ordinary Charge Blade use remains unchanged.
 
 
-### v1.3.9
+### v1.3.10
 - Claire's Might now opens a short actor-scoped activity window that completely bypasses the legacy Charge Blade Item.use chooser route during Claire activity resolution.
 - Charge Blade chooser pre-sync no longer rerenders the actor sheet during the originating click.
 
 
-## v1.3.9 Claire's Might architecture reset
+## v1.3.10 Claire's Might architecture reset
 Claire's Might now owns its own activity flow. Its activities stay visible and validate their requirements at use-time. The feat reads/writes the existing Charge Blade's state directly but never invokes or depends on the Charge Blade item-use/activity chooser. Older v1.3.x visibility state on owned Claire's Might feats is reset automatically on startup.
