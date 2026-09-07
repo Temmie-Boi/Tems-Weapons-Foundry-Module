@@ -152,3 +152,6 @@ Fixes a duplicate JavaScript helper declaration that prevented the module script
 
 ## v1.3.1 — Claire's Might
 Adds the Claire's Might feat and Combat Tracker-driven Charge Blade stance automation (3 Surges per combat, 3-turn stance, Ratchet engine, boosted combos, Axe Pump Load/Guard Point/Counter, Phial Cascade, and Earth-Shattering SAED).
+
+## v1.3.3 — Claire activity routing fix
+Suppresses forced Charge Blade actor-sheet rerenders while Claire's Might is resolving. This prevents the originating Claire activity click from being invalidated and falling through to the Charge Blade item chooser.

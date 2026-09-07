@@ -98,7 +98,7 @@ function readState(item) {
   };
 }
 
-async function writeState(item, state, {sync=true}={}) {
+async function writeState(item, state, {sync=true, renderActor=true}={}) {
   await item.update({
     "flags.world.chargeBladeMode": state.mode,
     "flags.world.chargeBladeCharge": clamp(state.charge, 0, 5),
@@ -106,11 +106,11 @@ async function writeState(item, state, {sync=true}={}) {
     "flags.world.chargeBladeShieldCharged": Boolean(state.shieldCharged),
     "flags.world.chargeBladeShieldChargedUntil": Number(state.shieldChargedUntil ?? 0),
     "flags.world.chargeBladeLastSAEDPhials": clamp(state.lastSAEDPhials ?? 0, 0, 5)
-  });
+  }, {temsWeaponsSuppressActorRender: !renderActor});
 
   if (sync) {
     await syncSwordShieldAC(item);
-    await syncActivityVisibility(item);
+    await syncActivityVisibility(item, {renderActor});
   }
 }
 
@@ -260,7 +260,7 @@ function activityShouldBeVisible(name, state) {
   }
 }
 
-async function syncActivityVisibility(item) {
+async function syncActivityVisibility(item, {renderActor=true}={}) {
   if (!isChargeBlade(item)) return;
 
   const lockKey = item.uuid;
@@ -293,7 +293,7 @@ async function syncActivityVisibility(item) {
 
     // Ask open sheets to refresh immediately.
     if (item.sheet?.rendered) item.sheet.render({force: true});
-    if (item.actor?.sheet?.rendered) item.actor.sheet.render({force: true});
+    if (renderActor && item.actor?.sheet?.rendered) item.actor.sheet.render({force: true});
   } finally {
     visibilityLocks.delete(lockKey);
   }
@@ -650,7 +650,7 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
 /* ITEM UPDATES                                                              */
 /* ------------------------------------------------------------------------- */
 
-Hooks.on("updateItem", async (item, changes) => {
+Hooks.on("updateItem", async (item, changes, options={}) => {
   if (!isChargeBlade(item)) return;
 
   const flat = foundry.utils.flattenObject(changes ?? {});
@@ -663,7 +663,7 @@ Hooks.on("updateItem", async (item, changes) => {
 
   await expireShieldIfNeeded(item);
   await syncSwordShieldAC(item);
-  await syncActivityVisibility(item);
+  await syncActivityVisibility(item, {renderActor: !options.temsWeaponsSuppressActorRender});
 });
 
 
@@ -1647,7 +1647,7 @@ async function cmRatchetTick(feat, blade) {
   if (cb.charge < 3) cb.charge = 3;
   else if (cb.charge < 5) cb.charge = 5;
   else return; // Red: engine idles.
-  await writeState(blade, cb);
+  await writeState(blade, cb, {renderActor:false});
   ui.notifications.info(`Ratchet engine: Charge ${before} → ${cb.charge}.`);
 }
 
@@ -1838,7 +1838,7 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
     }, {sync:false});
     const cb = readState(blade);
     cb.charge = Math.max(cb.charge, 3);
-    await writeState(blade, cb);
+    await writeState(blade, cb, {renderActor:false});
     await cmApplyMarkerEffect(actor, feat, CM_STANCE_EFFECT);
     await cmSyncVisibility(feat);
     ui.notifications.info(`Claire's Stance activated — Turn 1/3, ${cm.surges - 1} Surge${cm.surges - 1 === 1 ? "" : "s"} remaining, Charge ${cb.charge}/5.`);
@@ -1867,7 +1867,7 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
     const gained = cb.charge >= 5 ? 5 : 3;
     cb.phials = gained;
     cb.charge = 0;
-    await writeState(blade, cb);
+    await writeState(blade, cb, {renderActor:false});
     await cmSyncVisibility(feat);
     ui.notifications.info(`Axe Pump Load — loaded ${gained} Phials; remained in Axe Mode.`);
     return;
@@ -1925,7 +1925,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     const cb = readState(blade);
     if (hits >= 2) cb.charge = Math.max(cb.charge, 4);
     else if (hits >= 1) cb.charge = Math.max(cb.charge, 3);
-    await writeState(blade, cb);
+    await writeState(blade, cb, {renderActor:false});
     await cmSetState(feat, {ratchetActive:true, ratchetHits:hits, ratchetTurnKey:key}, {sync:false});
     await cmSyncVisibility(feat);
     ui.notifications.info(`Ratchet: ${hits}/2 confirmed hit${hits === 1 ? "" : "s"} this turn — Charge ${cb.charge}/5.`);
@@ -1940,7 +1940,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     if (hit) {
       hits = clamp(hits + 1, 0, 2);
       cb.charge = clamp(cb.charge + 1, 0, 5);
-      await writeState(blade, cb);
+      await writeState(blade, cb, {renderActor:false});
     }
     await cmSetState(feat, {cascadeHits:hits, cascadeTurnKey:key}, {sync:false});
 
@@ -1950,7 +1950,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
         const gained = live.charge >= 5 ? 5 : 3;
         live.phials = gained;
         live.charge = 0;
-        await writeState(blade, live);
+        await writeState(blade, live, {renderActor:false});
         ui.notifications.info(`Phial Cascade: ${hits} hit${hits === 1 ? "" : "s"}; automatically loaded ${gained} Phials.`);
       } else if (hits >= 1) {
         ui.notifications.info(`Phial Cascade hit, but Charge ${live.charge}/5 is below the loading threshold.`);
@@ -1967,7 +1967,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     if (hit) {
       const cb = readState(blade);
       cb.charge = clamp(cb.charge + 1, 0, 5);
-      await writeState(blade, cb);
+      await writeState(blade, cb, {renderActor:false});
       ui.notifications.info(`${n} hit: +1 Charge (${cb.charge}/5).`);
     }
     await cmSyncVisibility(feat);
@@ -1978,7 +1978,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     if (hit) {
       const cb = readState(blade);
       cb.phials = clamp(cb.phials - 1, 0, 5);
-      await writeState(blade, cb);
+      await writeState(blade, cb, {renderActor:false});
       ui.notifications.info(`Boosted Axe Combo discharge hit: -1 Phial (${cb.phials}/5).`);
     }
     await cmSyncVisibility(feat);
@@ -1989,7 +1989,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     if (hit) {
       const cb = readState(blade);
       cb.phials = clamp(cb.phials - 1, 0, 5);
-      await writeState(blade, cb);
+      await writeState(blade, cb, {renderActor:false});
       ui.notifications.info(`Axe Counter hit: -1 Phial (${cb.phials}/5).`);
     } else {
       ui.notifications.info("Axe Counter missed — no Phial spent.");
@@ -2024,7 +2024,7 @@ Hooks.on("dnd5e.rollDamage", async (rolls, data) => {
 
   cb.phials = 0;
   cb.mode = "sword";
-  await writeState(blade, cb);
+  await writeState(blade, cb, {renderActor:false});
   await cmSyncVisibility(feat);
   ui.notifications.info(`Earth-Shattering SAED: spent ${spent} Phial${spent === 1 ? "" : "s"}, returned to Sword Mode. Claire's Stance continues if time remains.`);
 });
