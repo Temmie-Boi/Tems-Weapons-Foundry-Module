@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.3.8
+ * Tem's Weapons v1.4.0
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -2195,6 +2195,80 @@ Hooks.on("createItem", async item => {
 });
 
 /* ------------------------------------------------------------------------- */
+/* v1.4.0 WEAPON BATCH                                                       */
+/* ------------------------------------------------------------------------- */
+
+const V140_IDS = Object.freeze({
+  TIRE: "tems-coral-tire-iron-tires",
+  BLAST: "tems-candy-blast-fists",
+  MANTID: "tems-fault-built-in-blades-brawling"
+});
+
+const MANTIS_GUARD_EFFECT = "Mantid — Mantis Guard";
+
+async function v140UseInternalFollowup(item, name) {
+  const activity = item?.system?.activities?.find?.(a => a.name === name);
+  if (!activity) {
+    console.warn(`Tem's Weapons | v1.4 follow-up activity missing: ${name}`);
+    return;
+  }
+  try {
+    if (typeof activity.rollAttack !== "function") throw new Error(`Activity ${name} does not expose rollAttack()`);
+    await activity.rollAttack();
+  } catch (err) {
+    console.error(`Tem's Weapons | Could not launch v1.4 follow-up: ${name}`, err);
+    ui.notifications.warn(`${name} could not be launched automatically. Check the console for details.`);
+  }
+}
+
+Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
+  const item = getItem(activity);
+  if (!item) return;
+  const id = item.system?.identifier;
+
+  if (id === V140_IDS.TIRE && activity.name === "Reload Tires") {
+    await item.update({"system.uses.spent": 0}, {render:false});
+    ui.notifications.info("Tire Iron & Tires — Tires restored to 3/3.");
+    return;
+  }
+
+  if (id === V140_IDS.BLAST && activity.name === "Reload Charges") {
+    await item.update({"system.uses.spent": 0}, {render:false});
+    ui.notifications.info("Blast Fists — Blast Charges restored to 3/3.");
+    return;
+  }
+
+  if (id === V140_IDS.MANTID && activity.name === "Mantis Guard") {
+    const actor = item.actor;
+    if (!actor) return;
+    await removeNamedEffect(actor, MANTIS_GUARD_EFFECT);
+    await actor.createEmbeddedDocuments("ActiveEffect", [{
+      name: MANTIS_GUARD_EFFECT,
+      img: item.img,
+      origin: item.uuid,
+      disabled: false,
+      transfer: false,
+      duration: {seconds: 6, rounds: 1},
+      changes: [{
+        key: "system.attributes.ac.bonus",
+        mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+        value: "2",
+        priority: 30
+      }]
+    }]);
+    ui.notifications.info("Mantis Guard active: +2 AC for 1 round.");
+  }
+});
+
+Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
+  const activity = data?.subject;
+  const item = getItem(activity);
+  if (!item || item.system?.identifier !== V140_IDS.MANTID) return;
+  if (activity?.name !== "Twin Blade Flurry") return;
+  await v140UseInternalFollowup(item, "Twin Blade Flurry — Second Blade");
+});
+
+/* ------------------------------------------------------------------------- */
 /* BUNDLED WEAPON INSTALLER                                                  */
 /* ------------------------------------------------------------------------- */
 
@@ -2217,7 +2291,13 @@ const BUNDLED_WEAPONS = [
   { path: "items/fault/cane-sword-rifle.json", identifier: "tems-fault-cane-rifle", folder: "Fault" },
   { path: "items/rival/gunheels-pistols.json", identifier: "tems-rival-gunheels-pistols", folder: "Rival" },
   { path: "items/stars/longsword.json", identifier: "tems-stars-longsword", folder: "STARS" },
-  { path: "items/stars/gunlance.json", identifier: "tems-stars-gunlance", folder: "STARS" }
+  { path: "items/stars/gunlance.json", identifier: "tems-stars-gunlance", folder: "STARS" },
+  { path: "items/coral/tire-iron-tires.json", identifier: "tems-coral-tire-iron-tires", folder: "Coral" },
+  { path: "items/candy/hatchet.json", identifier: "tems-candy-hatchet", folder: "Candy" },
+  { path: "items/candy/sawblade.json", identifier: "tems-candy-sawblade", folder: "Candy" },
+  { path: "items/candy/cleaver.json", identifier: "tems-candy-cleaver", folder: "Candy" },
+  { path: "items/candy/blast-fists.json", identifier: "tems-candy-blast-fists", folder: "Candy" },
+  { path: "items/fault/built-in-blades-brawling.json", identifier: "tems-fault-built-in-blades-brawling", folder: "Fault" }
 ];
 
 async function ensureItemFolder(name, parent=null) {

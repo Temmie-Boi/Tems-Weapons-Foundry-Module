@@ -174,3 +174,14 @@ Claire's Might now owns its own activity flow. Its activities stay visible and v
 ### v1.3.13
 - Fixed Claire's Might automatic second strikes to bypass D&D5e's second-action `canUse` gate by rolling the follow-up attack directly. This fixes Ratchet and Phial Cascade throwing “Using this activity isn't currently possible.” after their first strike.
 - Migrates existing Claire's Might world and actor copies to add the Morph activity without replacing the item.
+
+## v1.4.0 weapon batch
+
+- **Coral — Tire Iron & Tires:** Tire Iron, Launch Tire, Ricochet Tire, Tire Boost, and a 3-Tire reloadable resource.
+- **Candy — Hatchet:** fast 1d6 slashing thrown weapon (20/60).
+- **Candy — Sawblade:** 1d8 slashing thrown weapon (30/90) with a 10-ft on-hit reposition rider.
+- **Candy — Cleaver:** 1d10 slashing with a Momentum Cleave option for +1d6 after moving 10 ft.
+- **Candy — Blast Fists:** Blast Punch, Heavy Blast Punch, Blast Launch, and 3 reloadable Blast Charges.
+- **Fault — Built-In Blades & Bare-Knuckle Brawling:** bare-knuckle strikes, chitin blades, automatic two-hit Twin Blade Flurry, Raking Lunge, and Mantis Guard.
+
+Movement/push riders that depend on table positioning are described on their activities for the GM/player to resolve.
