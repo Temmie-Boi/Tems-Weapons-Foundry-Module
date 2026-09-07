@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.4.0
+ * Tem's Weapons v1.5.0
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -2268,6 +2268,82 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
   await v140UseInternalFollowup(item, "Twin Blade Flurry — Second Blade");
 });
 
+
+/* ------------------------------------------------------------------------- */
+/* v1.5.0 WEAPON BATCH                                                       */
+/* ------------------------------------------------------------------------- */
+
+const V150_IDS = Object.freeze({
+  KANABO: "tems-candy-kanabo-iron-maiden",
+  BOUQUET: "tems-candy-bouquet-roses",
+  SKATEBOARD: "tems-coral-jet-skateboard",
+  BERRIED: "tems-gaunt-berried-delight"
+});
+
+Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
+  const item = getItem(activity);
+  if (!item) return;
+  const id = item.system?.identifier;
+
+  if (id === V150_IDS.SKATEBOARD && activity.name === "Refuel") {
+    await item.update({"system.uses.spent": 0}, {render:false});
+    ui.notifications.info("Jet-Propelled Skateboard — Fuel restored to 3/3.");
+    return;
+  }
+
+  if (id === V150_IDS.BERRIED && activity.name === "Blink Slash") {
+    await item.setFlag("world", "temsBerriedBlinkBonus", true);
+    ui.notifications.info("Berried Delight — Blink Slash primed: next attack this turn gains +1d6 slashing.");
+    return;
+  }
+
+  if (id === V150_IDS.BOUQUET && activity.name === "Petal Feint") {
+    ui.notifications.info("Bouquet of Roses — Petal Feint: roll the next Bouquet attack this turn with Advantage.");
+  }
+});
+
+Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
+  const activity = data?.subject;
+  const item = getItem(activity);
+  if (!item) return;
+
+  if (item.system?.identifier === V150_IDS.BERRIED && activity?.name === "Rapid Draw") {
+    await v140UseInternalFollowup(item, "Rapid Draw — Second Cut");
+  }
+});
+
+Hooks.on("dnd5e.rollDamage", async (rolls, data) => {
+  const activity = data?.subject;
+  const item = getItem(activity);
+  if (!item || item.system?.identifier !== V150_IDS.BERRIED) return;
+
+  const attackNames = new Set([
+    "Judgement Cut",
+    "Rapid Draw",
+    "Rapid Draw — Second Cut",
+    "Sheathe Counter",
+    "Perfect Cut"
+  ]);
+  if (!attackNames.has(activity?.name)) return;
+
+  const primed = Boolean(item.getFlag("world", "temsBerriedBlinkBonus") ?? false);
+  if (!primed) return;
+
+  await item.setFlag("world", "temsBerriedBlinkBonus", false);
+
+  const actor = item.actor;
+  const roll = await new CONFIG.Dice.DamageRoll(
+    "1d6",
+    actor?.getRollData?.() ?? {},
+    {type:"slashing"}
+  ).evaluate();
+
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({actor}),
+    flavor: `${item.name} — Blink Slash bonus`
+  });
+});
+
 /* ------------------------------------------------------------------------- */
 /* BUNDLED WEAPON INSTALLER                                                  */
 /* ------------------------------------------------------------------------- */
@@ -2297,7 +2373,11 @@ const BUNDLED_WEAPONS = [
   { path: "items/candy/sawblade.json", identifier: "tems-candy-sawblade", folder: "Candy" },
   { path: "items/candy/cleaver.json", identifier: "tems-candy-cleaver", folder: "Candy" },
   { path: "items/candy/blast-fists.json", identifier: "tems-candy-blast-fists", folder: "Candy" },
-  { path: "items/fault/built-in-blades-brawling.json", identifier: "tems-fault-built-in-blades-brawling", folder: "Fault" }
+  { path: "items/fault/built-in-blades-brawling.json", identifier: "tems-fault-built-in-blades-brawling", folder: "Fault" },
+  { path: "items/candy/kanabo-iron-maiden.json", identifier: "tems-candy-kanabo-iron-maiden", folder: "Candy" },
+  { path: "items/candy/bouquet-of-roses.json", identifier: "tems-candy-bouquet-roses", folder: "Candy" },
+  { path: "items/coral/jet-propelled-skateboard.json", identifier: "tems-coral-jet-skateboard", folder: "Coral" },
+  { path: "items/gaunt/berried-delight.json", identifier: "tems-gaunt-berried-delight", folder: "Gaunt" }
 ];
 
 async function ensureItemFolder(name, parent=null) {
