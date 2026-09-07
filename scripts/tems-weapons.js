@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.3.2
+ * Tem's Weapons v1.3.5
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -99,6 +99,15 @@ function readState(item) {
 }
 
 async function writeState(item, state, {sync=true, renderActor=true}={}) {
+  const updateOptions = {temsWeaponsSuppressActorRender: !renderActor};
+  // Foundry's own embedded-document update can rerender the actor sheet even
+  // when our module does not explicitly call sheet.render(). During a sheet
+  // activity click that synchronous rerender can replace the clicked DOM node
+  // before D&D5e finishes handling the click, producing a click-through into
+  // another item. Claire's Might state changes deliberately use renderActor=false,
+  // so suppress the core document render for those updates as well.
+  if (!renderActor) updateOptions.render = false;
+
   await item.update({
     "flags.world.chargeBladeMode": state.mode,
     "flags.world.chargeBladeCharge": clamp(state.charge, 0, 5),
@@ -106,7 +115,7 @@ async function writeState(item, state, {sync=true, renderActor=true}={}) {
     "flags.world.chargeBladeShieldCharged": Boolean(state.shieldCharged),
     "flags.world.chargeBladeShieldChargedUntil": Number(state.shieldChargedUntil ?? 0),
     "flags.world.chargeBladeLastSAEDPhials": clamp(state.lastSAEDPhials ?? 0, 0, 5)
-  }, {temsWeaponsSuppressActorRender: !renderActor});
+  }, updateOptions);
 
   if (sync) {
     await syncSwordShieldAC(item);
@@ -1451,6 +1460,29 @@ const CM_MAX_SURGES = 3;
 const cmVisibilityLocks = new Set();
 const cmCombatTurnCache = new Map();
 const cmChargeBladeUseSuppressUntil = new Map();
+const cmDeferredRenderTimers = new Map();
+
+/**
+ * Claire's Might changes several owned documents in response to one activity.
+ * Synchronous actor-sheet rerenders during that click are unsafe: D&D5e can
+ * continue processing against a freshly-replaced DOM tree and open the item
+ * underneath the original pointer. Keep the document updates render-silent,
+ * then refresh the actor sheet after the click stack has fully completed.
+ */
+function cmScheduleActorRender(actor, delay=200) {
+  if (!actor?.id || !actor.sheet?.rendered) return;
+  const old = cmDeferredRenderTimers.get(actor.id);
+  if (old) clearTimeout(old);
+  const timer = setTimeout(() => {
+    cmDeferredRenderTimers.delete(actor.id);
+    try {
+      if (actor.sheet?.rendered) actor.sheet.render({force:true});
+    } catch (err) {
+      console.warn("Tem's Weapons | Deferred Claire actor-sheet render failed", err);
+    }
+  }, delay);
+  cmDeferredRenderTimers.set(actor.id, timer);
+}
 
 function cmArmChargeBladeUseSuppression(actor, ms=750) {
   if (!actor?.id) return;
@@ -1524,7 +1556,10 @@ async function cmRemoveEffect(actor, name) {
   if (!actor) return;
   const ids = actor.effects.filter(e => e.name === name).map(e => e.id).filter(Boolean);
   if (!ids.length) return;
-  try { await actor.deleteEmbeddedDocuments("ActiveEffect", ids); }
+  try {
+    await actor.deleteEmbeddedDocuments("ActiveEffect", ids, {render:false});
+    cmScheduleActorRender(actor);
+  }
   catch (err) { console.warn(`Tem's Weapons | Claire effect cleanup race: ${name}`, err); }
 }
 
@@ -1539,7 +1574,8 @@ async function cmApplyMarkerEffect(actor, feat, name) {
     duration: {},
     changes: [],
     flags: {"tems-weapons": {sourceItemId: feat.id}}
-  }]);
+  }], {render:false});
+  cmScheduleActorRender(actor);
 }
 
 async function cmSetSurges(feat, value) {
@@ -1548,7 +1584,8 @@ async function cmSetSurges(feat, value) {
     "flags.world.temsClaireSurges": surges,
     "system.uses.max": String(CM_MAX_SURGES),
     "system.uses.spent": CM_MAX_SURGES - surges
-  });
+  }, {render:false});
+  cmScheduleActorRender(feat.actor);
   return surges;
 }
 
@@ -1569,7 +1606,10 @@ async function cmSetState(feat, changes={}, {sync=true}={}) {
   if ("cascadeHits" in changes) update["flags.world.temsClaireCascadeHits"] = clamp(changes.cascadeHits, 0, 2);
   if ("cascadeTurnKey" in changes) update["flags.world.temsClaireCascadeTurnKey"] = String(changes.cascadeTurnKey ?? "");
 
-  if (Object.keys(update).length) await feat.update(update);
+  if (Object.keys(update).length) {
+    await feat.update(update, {render:false});
+    cmScheduleActorRender(feat.actor);
+  }
   if (sync) await cmSyncVisibility(feat);
 }
 
@@ -1625,12 +1665,16 @@ async function cmSyncVisibility(feat) {
       if (curMin !== wantMin) updates[`system.activities.${activity.id}.visibility.level.min`] = wantMin;
       if (curMax !== wantMax) updates[`system.activities.${activity.id}.visibility.level.max`] = wantMax;
     }
-    if (Object.keys(updates).length) await feat.update(updates);
-    // Do not force-render the actor sheet here. Doing so during an activity
-    // click can invalidate the sheet element that initiated the click and
-    // route the follow-up through a neighboring owned item. Foundry's
-    // embedded Item update handles normal sheet refresh on its own.
-    if (feat.sheet?.rendered) feat.sheet.render({force:true});
+    if (Object.keys(updates).length) await feat.update(updates, {render:false});
+    // Never synchronously replace the actor/item sheet DOM from inside a Claire
+    // activity click. Refresh shortly after the current click stack finishes.
+    cmScheduleActorRender(feat.actor);
+    if (feat.sheet?.rendered) {
+      setTimeout(() => {
+        try { if (feat.sheet?.rendered) feat.sheet.render({force:true}); }
+        catch (err) { console.warn("Tem's Weapons | Deferred Claire item-sheet render failed", err); }
+      }, 200);
+    }
   } finally {
     cmVisibilityLocks.delete(key);
   }
@@ -1922,7 +1966,8 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
         priority:30
       }],
       flags:{"tems-weapons":{sourceItemId:feat.id}}
-    }]);
+    }], {render:false});
+    cmScheduleActorRender(actor);
     await cmSetState(feat, {counterReady:true});
     ui.notifications.info("Axe Guard Point: +2 AC. If this turns the triggering hit into a miss, use Axe Counter immediately.");
     return;
