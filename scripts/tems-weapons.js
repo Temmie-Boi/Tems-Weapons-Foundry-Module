@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.3.1
+ * Tem's Weapons v1.3.2
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -709,25 +709,6 @@ function installChargeBladeItemUseWrapper() {
       }
     }
 
-    // Claire's Might also changes which activities are usable at runtime.
-    // Synchronize the feat itself before D&D5e decides whether to use the
-    // sole visible activity directly or show an activity-choice dialog.
-    // This keeps Claire's activity routing isolated from the Charge Blade
-    // chooser and prevents a stale actor-sheet use from falling through to
-    // the weapon's picker.
-    if (isClairesMight(this)) {
-      try {
-        await cmSyncVisibility(this);
-        this.prepareData?.();
-
-        const activities = this.system.activities?.filter?.(a => a.canUse) ?? [];
-        if (activities.length === 1 && !config?.chooseActivity && !config?.event?.shiftKey) {
-          return activities[0].use(config, dialog, message);
-        }
-      } catch (err) {
-        console.error("Tem's Weapons | Claire's Might pre-use sync failed", err);
-      }
-    }
 
     if (this?.system?.identifier === "tems-fault-cane-rifle") {
       try {
@@ -1616,8 +1597,11 @@ async function cmSyncVisibility(feat) {
       if (curMax !== wantMax) updates[`system.activities.${activity.id}.visibility.level.max`] = wantMax;
     }
     if (Object.keys(updates).length) await feat.update(updates);
+    // Do not force-render the actor sheet here. Doing so during an activity
+    // click can invalidate the sheet element that initiated the click and
+    // route the follow-up through a neighboring owned item. Foundry's
+    // embedded Item update handles normal sheet refresh on its own.
     if (feat.sheet?.rendered) feat.sheet.render({force:true});
-    if (feat.actor?.sheet?.rendered) feat.actor.sheet.render({force:true});
   } finally {
     cmVisibilityLocks.delete(key);
   }
