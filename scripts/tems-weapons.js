@@ -472,11 +472,18 @@ async function cmUseInternalFollowup(feat, name) {
     return;
   }
 
-  // Hidden activities are excluded from the item picker, but direct Activity#use
-  // remains the cleanest way to resolve the second attack with the normal D&D5e
-  // attack dialog/chat workflow.
+  // IMPORTANT: Do not call Activity#use() for the automatic second strike.
+  // D&D5e's canUse check includes action-economy restrictions, so after the
+  // first Action has already been spent a second Action activity is rejected
+  // with "Using this activity isn't currently possible."  The follow-up is
+  // part of the same technique, so bypass the second use/action check and roll
+  // only the follow-up attack itself. rollAttack() still runs the normal attack
+  // workflow and dnd5e.postRollAttack hook, allowing our hit automation to work.
   try {
-    await activity.use();
+    if (typeof activity.rollAttack !== "function") {
+      throw new Error(`Activity ${name} does not expose rollAttack()`);
+    }
+    await activity.rollAttack();
   } catch (err) {
     console.error(`Tem's Weapons | Could not launch Claire follow-up: ${name}`, err);
     ui.notifications.warn(`${name} could not be launched automatically. Check the console for details.`);
@@ -1487,6 +1494,7 @@ const CM_MAX_SURGES = 3;
 const cmVisibilityLocks = new Set();
 const cmCombatTurnCache = new Map();
 const cmDeferredRenderTimers = new Map();
+const cmPairedStrikeState = new Map();
 
 /**
  * Claire's Might deliberately does not rerender the actor sheet while an
@@ -2036,36 +2044,61 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
   }
 
   if ([CM_NAMES.RATCHET_1, CM_NAMES.RATCHET_2].includes(n)) {
-    const key = cmTurnKey(actor);
-    const storedKey = String(feat.getFlag(SCOPE,"temsClaireRatchetTurnKey") ?? "");
-    let hits = storedKey === key ? clamp(feat.getFlag(SCOPE,"temsClaireRatchetHits") ?? 0, 0, 2) : 0;
-    if (hit) hits = clamp(hits + 1, 0, 2);
+    // Paired-strike hit counting is kept in memory for the duration of the
+    // automatic two-roll sequence. Using item flags here caused the nested
+    // second roll to sometimes read stale document state and register as a
+    // fresh first hit again.
+    const pairKey = `${feat.uuid}:ratchet`;
+    let hits;
+    if (n === CM_NAMES.RATCHET_1) {
+      hits = hit ? 1 : 0;
+      cmPairedStrikeState.set(pairKey, {hits});
+    } else {
+      const pending = cmPairedStrikeState.get(pairKey) ?? {hits:0};
+      hits = clamp((pending.hits ?? 0) + (hit ? 1 : 0), 0, 2);
+      cmPairedStrikeState.delete(pairKey);
+    }
+
     const cb = readState(blade);
     if (hits >= 2) cb.charge = Math.max(cb.charge, 4);
     else if (hits >= 1) cb.charge = Math.max(cb.charge, 3);
     await writeState(blade, cb, {renderActor:false});
     await cmSyncVisibility(feat);
-    await cmSetState(feat, {ratchetActive:true, ratchetHits:hits, ratchetTurnKey:key}, {sync:false});
+    await cmSetState(feat, {ratchetActive:true, ratchetHits:hits, ratchetTurnKey:cmTurnKey(actor)}, {sync:false});
     ui.notifications.info(`Ratchet: ${hits}/2 confirmed hit${hits === 1 ? "" : "s"} this turn — Charge ${cb.charge}/5.`);
-    if (n === CM_NAMES.RATCHET_1) await cmUseInternalFollowup(feat, CM_NAMES.RATCHET_2);
+
+    if (n === CM_NAMES.RATCHET_1) {
+      await cmUseInternalFollowup(feat, CM_NAMES.RATCHET_2);
+      // If the follow-up was cancelled/failed before reaching postRollAttack,
+      // do not let its pending hit state leak into the next Ratchet use.
+      cmPairedStrikeState.delete(pairKey);
+    }
     return;
   }
 
   if ([CM_NAMES.CASCADE_1, CM_NAMES.CASCADE_2].includes(n)) {
-    const key = cmTurnKey(actor);
-    const storedKey = String(feat.getFlag(SCOPE,"temsClaireCascadeTurnKey") ?? "");
-    let hits = storedKey === key ? clamp(feat.getFlag(SCOPE,"temsClaireCascadeHits") ?? 0, 0, 2) : 0;
+    const pairKey = `${feat.uuid}:cascade`;
+    let hits;
+    if (n === CM_NAMES.CASCADE_1) {
+      hits = hit ? 1 : 0;
+      cmPairedStrikeState.set(pairKey, {hits});
+    } else {
+      const pending = cmPairedStrikeState.get(pairKey) ?? {hits:0};
+      hits = clamp((pending.hits ?? 0) + (hit ? 1 : 0), 0, 2);
+      cmPairedStrikeState.delete(pairKey);
+    }
+
     const cb = readState(blade);
     if (hit) {
-      hits = clamp(hits + 1, 0, 2);
       cb.charge = clamp(cb.charge + 1, 0, 5);
       await writeState(blade, cb, {renderActor:false});
       await cmSyncVisibility(feat);
     }
-    await cmSetState(feat, {cascadeHits:hits, cascadeTurnKey:key}, {sync:false});
+    await cmSetState(feat, {cascadeHits:hits, cascadeTurnKey:cmTurnKey(actor)}, {sync:false});
 
     if (n === CM_NAMES.CASCADE_1) {
       await cmUseInternalFollowup(feat, CM_NAMES.CASCADE_2);
+      cmPairedStrikeState.delete(pairKey);
       return;
     }
 
