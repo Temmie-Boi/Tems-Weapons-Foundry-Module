@@ -2443,7 +2443,12 @@ async function v160SyncMotorVisibility(item) {
     await v160SetActivityVisible(item, activity, visible, updates);
   }
 
-  if (Object.keys(updates).length) await item.update(updates, {render:false});
+  if (Object.keys(updates).length) await item.update(updates);
+  // D&D5e caches prepared activity usability/visibility. Rebuild it immediately
+  // so a mode change is reflected on the very next picker/sheet interaction.
+  item.prepareData?.();
+  if (item.sheet?.rendered) item.sheet.render({force:true});
+  if (item.actor?.sheet?.rendered) item.actor.sheet.render({force:true});
 }
 
 async function v160SetMotorMode(item, mode) {
