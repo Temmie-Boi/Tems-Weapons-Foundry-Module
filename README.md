@@ -171,5 +171,5 @@ Suppresses forced Charge Blade actor-sheet rerenders while Claire's Might is res
 Claire's Might now owns its own activity flow. Its activities stay visible and validate their requirements at use-time. The feat reads/writes the existing Charge Blade's state directly but never invokes or depends on the Charge Blade item-use/activity chooser. Older v1.3.x visibility state on owned Claire's Might feats is reset automatically on startup.
 
 
-### v1.3.11
+### v1.3.12
 - Migrates existing Claire's Might world and actor copies to add the Morph activity without replacing the item.

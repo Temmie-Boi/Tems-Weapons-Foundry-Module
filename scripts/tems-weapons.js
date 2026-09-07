@@ -465,6 +465,24 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
 /* CONFIRMED-HIT SWORD CHARGE                                                */
 /* ------------------------------------------------------------------------- */
 
+async function cmUseInternalFollowup(feat, name) {
+  const activity = feat?.system?.activities?.find?.(a => a.name === name);
+  if (!activity) {
+    console.warn(`Tem's Weapons | Claire follow-up activity missing: ${name}`);
+    return;
+  }
+
+  // Hidden activities are excluded from the item picker, but direct Activity#use
+  // remains the cleanest way to resolve the second attack with the normal D&D5e
+  // attack dialog/chat workflow.
+  try {
+    await activity.use();
+  } catch (err) {
+    console.error(`Tem's Weapons | Could not launch Claire follow-up: ${name}`, err);
+    ui.notifications.warn(`${name} could not be launched automatically. Check the console for details.`);
+  }
+}
+
 Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
   const activity = data?.subject;
   const item = getItem(activity);
@@ -1602,10 +1620,13 @@ function cmActivityVisible(name, feat, blade) {
 
   switch (name) {
     case CM_NAMES.RATCHET_1:
-    case CM_NAMES.RATCHET_2:
       return true;
-    case CM_NAMES.CASCADE_1:
+    // Follow-up strikes are internal activities. They are invoked automatically
+    // after the first strike and should never clutter Claire's Might picker.
+    case CM_NAMES.RATCHET_2:
     case CM_NAMES.CASCADE_2:
+      return false;
+    case CM_NAMES.CASCADE_1:
     case CM_NAMES.SWORD_1:
     case CM_NAMES.SWORD_2:
       return cb.mode === "sword";
@@ -1906,7 +1927,8 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
     if (!getActiveCombatForActor(actor) || liveCm.stanceActive || liveCm.surges < 1) return;
   } else {
     if (!liveCm.stanceActive) return;
-    if (!cmActivityVisible(n, feat, blade) && n !== CM_NAMES.MORPH) return;
+    const internalFollowup = [CM_NAMES.RATCHET_2, CM_NAMES.CASCADE_2].includes(n);
+    if (!internalFollowup && !cmActivityVisible(n, feat, blade) && n !== CM_NAMES.MORPH) return;
   }
 
   if (n === CM_NAMES.STANCE) {
@@ -2025,6 +2047,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     await cmSyncVisibility(feat);
     await cmSetState(feat, {ratchetActive:true, ratchetHits:hits, ratchetTurnKey:key}, {sync:false});
     ui.notifications.info(`Ratchet: ${hits}/2 confirmed hit${hits === 1 ? "" : "s"} this turn — Charge ${cb.charge}/5.`);
+    if (n === CM_NAMES.RATCHET_1) await cmUseInternalFollowup(feat, CM_NAMES.RATCHET_2);
     return;
   }
 
@@ -2040,6 +2063,11 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
       await cmSyncVisibility(feat);
     }
     await cmSetState(feat, {cascadeHits:hits, cascadeTurnKey:key}, {sync:false});
+
+    if (n === CM_NAMES.CASCADE_1) {
+      await cmUseInternalFollowup(feat, CM_NAMES.CASCADE_2);
+      return;
+    }
 
     if (n === CM_NAMES.CASCADE_2) {
       const live = readState(blade);
