@@ -2680,6 +2680,7 @@ const V170_ROULETTE_DIE_ATTACKS = new Set([
   "Jackpot Barrage", "Jackpot Barrage — Shot 2", "Jackpot Barrage — Shot 3",
   "Jackpot Barrage — Shot 4", "Jackpot Barrage — Shot 5", "Jackpot Barrage — Shot 6"
 ]);
+const V170_JACKPOT_PENDING = new Map();
 const V170_MYSTIC_RIDE_EFFECT = "Kickin Mystic Sword — Hover Ride";
 const V170_MYSTIC_SHIELD_EFFECT = "Kickin Mystic Sword — Spin Shield";
 
@@ -2843,9 +2844,16 @@ Hooks.on("dnd5e.preUseActivity", async activity => {
       ui.notifications.warn("The slot-machine Charge is spent and has not recharged yet.");
       return false;
     }
-    if (n === "Jackpot Barrage" && !Boolean(item.getFlag("world", "temsRouletteJackpotArmed") ?? false)) {
-      ui.notifications.warn("Jackpot Barrage requires Slot Lever to be armed first.");
-      return false;
+    if (n === "Jackpot Barrage") {
+      if (!Boolean(item.getFlag("world", "temsRouletteJackpotArmed") ?? false)) {
+        ui.notifications.warn("Jackpot Barrage requires Slot Lever to be armed first.");
+        return false;
+      }
+      // Roll and cache the shot count BEFORE the first attack resolves. Foundry can
+      // fire postRollAttack before postCreateUsageMessage has finished updating flags.
+      const roll = await new Roll("1d6").evaluate();
+      const shots = Math.max(1, Math.min(6, Number(roll.total ?? 1)));
+      V170_JACKPOT_PENDING.set(item.uuid, {shots, roll});
     }
   }
 
@@ -2873,13 +2881,15 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
       return;
     }
     if (n === "Jackpot Barrage") {
-      const roll = await new Roll("1d6").evaluate();
-      const shots = Math.max(1, Math.min(6, Number(roll.total ?? 1)));
+      const pending = V170_JACKPOT_PENDING.get(item.uuid);
+      const shots = pending?.shots ?? Math.max(1, Math.min(6, Number(item.getFlag("world", "temsRouletteJackpotShots") ?? 1)));
       await item.update({
         "flags.world.temsRouletteJackpotArmed": false,
         "flags.world.temsRouletteJackpotShots": shots
       }, {render:false});
-      await roll.toMessage({speaker:ChatMessage.getSpeaker({actor:item.actor}), flavor:`${item.name} — Jackpot Barrage: ${shots} shot${shots === 1 ? "" : "s"}`});
+      if (pending?.roll) {
+        await pending.roll.toMessage({speaker:ChatMessage.getSpeaker({actor:item.actor}), flavor:`${item.name} — Jackpot Barrage: ${shots} shot${shots === 1 ? "" : "s"}`});
+      }
       await v170SyncRouletteVisibility(item);
       return;
     }
@@ -2937,7 +2947,11 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     if (n === "Grappling Hook") return v170RollRoulette(item, "Grappling Hook");
     if (n === "Gatling Fire") return v170RollFollowups(item, ["Gatling Fire — Shot 2", "Gatling Fire — Shot 3"]);
     if (n === "Jackpot Barrage") {
-      const shots = Math.max(1, Math.min(6, Number(item.getFlag("world", "temsRouletteJackpotShots") ?? 1)));
+      // Prefer the in-memory value captured in preUseActivity so the first attack
+      // cannot race the item-flag update performed by postCreateUsageMessage.
+      const pending = V170_JACKPOT_PENDING.get(item.uuid);
+      const shots = Math.max(1, Math.min(6, Number(pending?.shots ?? item.getFlag("world", "temsRouletteJackpotShots") ?? 1)));
+      V170_JACKPOT_PENDING.delete(item.uuid);
       const names = [];
       for (let i=2; i<=shots; i++) names.push(`Jackpot Barrage — Shot ${i}`);
       await item.setFlag("world", "temsRouletteJackpotShots", 0);

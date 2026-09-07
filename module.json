@@ -2,7 +2,7 @@
   "id": "tems-weapons",
   "title": "Tem's Weapons",
   "description": "Tem's custom D&D5e weapon library and automation, including Charge Blade, Claire's Might, Steamknights, Roulette Briefcase / Revolver, and Kickin Mystic Sword.",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
