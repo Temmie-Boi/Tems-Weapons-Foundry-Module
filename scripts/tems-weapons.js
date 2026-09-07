@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.3.0
+ * Tem's Weapons v1.3.1
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -706,6 +706,26 @@ function installChargeBladeItemUseWrapper() {
         this.prepareData?.();
       } catch (err) {
         console.error("Tem's Weapons | Charge Blade pre-use visibility sync failed", err);
+      }
+    }
+
+    // Claire's Might also changes which activities are usable at runtime.
+    // Synchronize the feat itself before D&D5e decides whether to use the
+    // sole visible activity directly or show an activity-choice dialog.
+    // This keeps Claire's activity routing isolated from the Charge Blade
+    // chooser and prevents a stale actor-sheet use from falling through to
+    // the weapon's picker.
+    if (isClairesMight(this)) {
+      try {
+        await cmSyncVisibility(this);
+        this.prepareData?.();
+
+        const activities = this.system.activities?.filter?.(a => a.canUse) ?? [];
+        if (activities.length === 1 && !config?.chooseActivity && !config?.event?.shiftKey) {
+          return activities[0].use(config, dialog, message);
+        }
+      } catch (err) {
+        console.error("Tem's Weapons | Claire's Might pre-use sync failed", err);
       }
     }
 

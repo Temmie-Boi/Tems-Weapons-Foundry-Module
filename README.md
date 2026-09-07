@@ -150,5 +150,5 @@ Fixes a duplicate JavaScript helper declaration that prevented the module script
 - AC, movement, stored state, and Second Blade damage are synchronized from the requested boolean state.
 
 
-## v1.3.0 — Claire's Might
+## v1.3.1 — Claire's Might
 Adds the Claire's Might feat and Combat Tracker-driven Charge Blade stance automation (3 Surges per combat, 3-turn stance, Ratchet engine, boosted combos, Axe Pump Load/Guard Point/Counter, Phial Cascade, and Earth-Shattering SAED).
