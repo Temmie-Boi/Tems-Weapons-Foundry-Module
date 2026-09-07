@@ -698,6 +698,15 @@ function installChargeBladeItemUseWrapper() {
   const originalUse = proto.use;
 
   proto.use = async function(config={}, dialog={}, message={}) {
+    // Claire's Might activities can cause the D&D5e actor sheet to issue a
+    // second, unintended Item.use() for the owned Charge Blade during the same
+    // click.  Suppress only that immediate stray call; ordinary Charge Blade
+    // uses remain unchanged.
+    if (isChargeBlade(this) && cmShouldSuppressChargeBladeUse(this)) {
+      console.debug("Tem's Weapons | Suppressed stray Charge Blade chooser after Claire's Might activity.");
+      return null;
+    }
+
     if (isChargeBlade(this)) {
       try {
         await expireShieldIfNeeded(this);
@@ -1441,6 +1450,26 @@ const CM_GUARD_EFFECT = "Claire's Might — Axe Guard Point";
 const CM_MAX_SURGES = 3;
 const cmVisibilityLocks = new Set();
 const cmCombatTurnCache = new Map();
+const cmChargeBladeUseSuppressUntil = new Map();
+
+function cmArmChargeBladeUseSuppression(actor, ms=750) {
+  if (!actor?.id) return;
+  cmChargeBladeUseSuppressUntil.set(actor.id, Date.now() + ms);
+}
+
+function cmShouldSuppressChargeBladeUse(blade) {
+  const actorId = blade?.actor?.id;
+  if (!actorId) return false;
+  const until = Number(cmChargeBladeUseSuppressUntil.get(actorId) ?? 0);
+  if (!until) return false;
+  if (Date.now() > until) {
+    cmChargeBladeUseSuppressUntil.delete(actorId);
+    return false;
+  }
+  // One-shot suppression: consume the guard as soon as the stray call arrives.
+  cmChargeBladeUseSuppressUntil.delete(actorId);
+  return true;
+}
 
 const CM_NAMES = Object.freeze({
   STANCE: "Claire's Stance",
@@ -1748,6 +1777,11 @@ Hooks.on("dnd5e.preUseActivity", async activity => {
     ui.notifications.warn("Claire's Might requires an owned Charge Blade on the same actor.");
     return false;
   }
+
+  // Guard the current click against the actor-sheet click-through that can
+  // otherwise open the Charge Blade's multi-activity chooser after this
+  // Claire's Might activity resolves.
+  cmArmChargeBladeUseSuppression(actor);
 
   if (n === CM_NAMES.STANCE) {
     if (!getActiveCombatForActor(actor)) {
@@ -2284,5 +2318,5 @@ Hooks.once("ready", async () => {
     }
   }
 
-  console.log("Tem's Weapons | v2.1.1 Ready");
+  console.log("Tem's Weapons | v1.3.4 Ready");
 });
