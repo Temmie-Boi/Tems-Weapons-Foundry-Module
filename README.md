@@ -1,335 +1,213 @@
-# Tem's Weapons
+# Tem's Weapons v1.7.0
 
-Custom D&D5e weapons and automation for Foundry VTT.
+Foundry VTT v14 / D&D5e 5.3.x
 
-**Current version:** `1.6.2`  
-**Foundry VTT:** v14  
-**D&D5e system:** 5.3.x (`5.3.2` verified)
+## Included weapons
 
-## What this module does
-
-Tem's Weapons installs a library of custom weapons, a custom feat, and their supporting automation into a D&D5e world.
-
-On GM world load the module creates a root **Tem's weapons** Item folder and imports any bundled Items that are missing. Existing bundled Items are detected by their stable `system.identifier`, so normal reloads do not create duplicate copies.
-
-Several existing world Items and actor-owned copies are also migrated/synchronized when newer automation requires it.
-
-## Included content
-
-### Charge Blade
-
-A fully stateful Charge Blade implementation with:
-
-- Sword Slash
-- Axe Slash
-- Element Discharge
-- Amped Element Discharge (AED)
-- Super Amped Element Discharge (SAED)
-- Morph
-- Load Phials
-- Charge Shield
-- Guard Point
-
-The automation tracks Charge, Phials, weapon mode, charged-shield state, mode-dependent activity visibility, and the Charge Blade's special attacks.
-
-### Claire's Might
-
-A custom feat that extends the existing Charge Blade rather than replacing it.
-
-Included actions:
-
-- Claire's Stance
-- Ratchet
-- Phial Cascade
-- Axe Pump Load
-- Axe Guard Point
-- Axe Counter
-- Boosted Sword Combo
-- Boosted Axe Combo
-- Earth-Shattering SAED
-- Morph
-
-Core behavior includes:
-
-- **3 Surges per combat**
-- **Claire's Stance lasts 3 of Claire's turns**
-- entering Stance raises Charge to at least Yellow / 3 Charge
-- Ratchet functions as a Charge-building engine while Stance is active
-- Ratchet's two confirmed hits accelerate Charge to 4
-- Phial Cascade performs two strikes and can load available Charge into Phials after connecting
-- Axe Pump Load loads Phials while remaining in Axe Mode
-- boosted Sword and Axe combinations use automatic internal follow-up strikes
-- Earth-Shattering SAED requires Stance, Axe Mode, a charged shield, loaded Phials, and an additional Surge
-- Earth-Shattering SAED deals `3d12 slashing + 2d8 force per loaded Phial`, consumes the loaded Phials, and returns the Charge Blade to Sword Mode
-- Claire's Might and the Charge Blade share the same actual Sword/Axe mode
-
-Internal follow-up activities are hidden from the normal activity picker and are resolved automatically by the module.
-
-## Weapon library
-
-The current bundle contains the following weapon Items:
-
-- Argus Class Steamknight
-- Berried Delight
-- Blast Fists
-- Bombs
-- Bouquet of Roses
-- Built-In Blades & Bare-Knuckle Brawling
-- Cane Sword / Cane Rifle
+Tem's weapons
 - Charge Blade
-- Cleaver
-- Dual Blades
-- Electrified Javelin
-- Greatsword
-- Gunheels / Pistols
-- Gunlance
-- Harpoon
-- Hatchet
-- Jet Hammer
-- Jet-Propelled Skateboard
-- Kanabo / Iron Maiden
-- Longsword
-- Meteor Hammer / Censer
-- Motorbike / Chainsaw / Chaingun
-- Paris Class Steamknight
-- Sawblade
-- Sniper Rifle
-- Sword & Shield
-- Teleportation Chakram
-- Tire Iron & Tires
-- Twin Scimitars
-
-Claire's Might is bundled separately as a Feat.
-
-## Selected automated systems
-
-### Motorbike / Chainsaw / Chaingun
-
-A three-mode weapon. Only the activities for the current mode are presented for use.
-
-**Motorbike Mode**
-- Drive
-- Ram
-- Burnout
-
-**Chainsaw Mode**
-- Chainsaw Slash
-- Revving Cut
-- Grind
-- Rip Through
-
-**Chaingun Mode**
-- Chaingun Burst
-- Spin Up
-- Full Auto
-- Strafing Fire
-
-Revving Cut, Chaingun Burst, Full Auto, and Strafing Fire use hidden internal follow-up attacks. Spin Up enables Full Auto. Switching modes clears incompatible temporary state. Version 1.6.2 synchronizes mode visibility before the D&D5e picker opens, so the new mode appears on the first click after switching.
-
-### Argus Class Steamknight
-
-- Heavy Cannon
-- Sustained Fire
-- Suppressive Barrage
-- Brace
-- Advance
-- Overwatch
-
-Brace grants **+2 to Heavy Cannon attack rolls** and adds a **fourth Sustained Fire shot**. Moving the token ends Brace automatically.
-
-### Paris Class Steamknight
-
-- High-Speed Strike
-- Burst Fire
-- Jet Dash
-- Drive-By Attack
-- Disengage Burst
-- Alpha Strike
-
-Burst Fire resolves as three separate attack rolls. Position-dependent movement remains player/GM controlled.
-
-### Berried Delight
-
-- Judgement Cut
-- Rapid Draw
-- Sheathe Counter
-- Blink Slash
-- Perfect Cut
-
-Rapid Draw performs two attack rolls. Blink Slash primes the next appropriate attack for its bonus damage.
-
-### Jet-Propelled Skateboard
-
-Uses a 3-Fuel resource and includes:
-
-- Board Bash
-- Jet Rush
-- Drive-By Strike
-- Rocket Jump
-- Refuel
-
-### Kanabo / Iron Maiden
-
-- Kanabo Smash
-- Driving Blow
-- Iron Maiden
-- Crushing Closure
-
-Control and forced-movement riders are intentionally resolved manually.
-
-### Bouquet of Roses
-
-- Rose Strike
-- Thorn Scatter
-- Stem Lash
-- Petal Feint
-
-Petal Feint's tactical Advantage rider is player/GM resolved.
-
-### Tire Iron & Tires
-
-Uses a 3-Tire resource and includes:
-
-- Tire Iron
-- Launch Tire
-- Ricochet Tire
-- Tire Boost
-- Reload Tires
-
-### Blast Fists
-
-Uses 3 Blast Charges and includes:
-
-- Blast Punch
-- Heavy Blast Punch
-- Blast Launch
-- Reload Charges
-
-### Built-In Blades & Bare-Knuckle Brawling
-
-- Bare-Knuckle Strike
-- Chitin Blade
-- Twin Blade Flurry
-- Raking Lunge
-- Mantis Guard
-
-Twin Blade Flurry resolves its second blade automatically. Mantis Guard applies its AC effect through Foundry.
-
-## Other automated weapons
-
-The module also contains established automation for:
-
-- **Dual Blades** — Demon Mode toggles a real Active Effect, applying `-2 AC`, `+10 ft` walking speed, and the second-blade damage bonus.
-- **Longsword** — tracks Spirit and Spirit Level, with hit-confirmed generation/spending and Spirit attack gating.
-- **Gunlance** — tracks Shells, Full Burst spending, Reload, and Wyvern's Fire state.
-- **Jet Hammer** — tracks Fuel and blocks powered attacks when Fuel is insufficient.
-- **Cane Sword / Cane Rifle** — transformation state and activity visibility are synchronized before the picker opens.
-- **Harpoon** — tether state plus Reel Target / Reel Self token movement.
-- **Teleportation Chakram** — stores a marked token position and can teleport the wielder's active token to it.
-- **Gunheels / Pistols** — combo-state attacks and Bullet Climax behavior.
-- **Sword & Shield** — equipped AC bonus and Shield Bash activity.
-
-The remaining simpler weapons primarily use native D&D5e activities with their special riders written directly into the activity descriptions.
-
-## Manual / table-positioning mechanics
-
-Not every positional rule is force-automated. This is intentional.
-
-Depending on the weapon, the player or GM may still resolve:
-
-- movement granted by an activity
-- pushes and pulls
-- movement-distance prerequisites
-- cone/radius placement and affected targets
-- firing-lane / Overwatch triggers
-- some save-based riders
-- some grapple, restraint, or control riders
-- tactical Advantage conditions
-
-This avoids having the module guess table geometry or make positional decisions for the player.
+- Coral
+  - Greatsword
+- Gaunt
+  - Bombs
+- Fault
+  - Sniper Rifle
+  - Twin Scimitars
+- Candy
+  - Electrified Javelin
+- STARS
+  - Sword & Shield
+  - Dual Blades
 
 ## Installation
 
-### Manual installation
+1. Shut down Foundry.
+2. Replace the existing `Data/modules/tems-weapons/` folder with this version.
+3. Start Foundry and enable **Tem's Weapons**.
+4. Enter the world as a GM.
 
-1. Download the ZIP for the release you want.
-2. Extract it as a folder named `tems-weapons` inside Foundry's `Data/modules/` directory.
-3. Start or restart Foundry VTT.
-4. Enable **Tem's Weapons** for the D&D5e world.
-5. Enter the world as a GM so bundled Items can be imported/synchronized.
+The module automatically creates missing folders and bundled weapon items. Existing bundled
+weapons are detected by stable identifier and are not duplicated.
 
-When updating manually, replace the contents of the existing `Data/modules/tems-weapons/` folder with the new release.
+## Straightforward batch mechanics
 
-### Manifest URL
+### Coral — Greatsword
+- Greatsword Slash: 2d6 slashing.
+- Charged Slash: 4d6 slashing; intended only when the wielder has not moved before the attack.
+- Shoulder Tackle: reaction, roll 1d8 + STR modifier to reduce incoming physical damage.
 
-The repository's current manifest is available at:
+### Gaunt — Bombs
+- Bomb Pouch: 3 item uses.
+- Throw Bomb: 2d6 fire, 10-ft blast, Dexterity save described on the activity.
+- Prime Bomb: bonus-action setup.
+- Throw Primed Bomb: 3d6 fire, 15-ft blast.
+- Bomb activities consume one item use when D&D5e consumption is available.
 
-```text
-https://raw.githubusercontent.com/Temmie-Boi/Tems-Weapons-Foundry-Module/main/module.json
-```
+### Fault — Sniper Rifle
+- 2d10 piercing, range 150/600.
+- Take Aim: bonus-action tactical activity; advantage/cover are currently applied by the player.
+- Headshot: critical hits add an extra 2d10 automatically through the attack activity.
 
-**Important:** the current `1.6.2` `module.json` does not yet define Foundry `manifest` and `download` fields. The URL above points to the manifest file, but automatic install/update through Foundry should not be considered configured until those fields are added in a future release. Use the release ZIP for reliable installation of v1.6.2.
+### Fault — Twin Scimitars
+- Two 1d6 slashing attacks.
+- Crosscut Bonus: explicit 1d6 roll used once per turn if both attacks hit the same target.
 
-## Updating and duplicate behavior
+### Candy — Electrified Javelin
+- 1d6 piercing + 1d6 lightning, range 30/120.
+- Overcharged Throw includes the Constitution-save / no-reactions rider in its chat instructions.
 
-Bundled Items are keyed by stable identifiers. On startup, the module searches the Tem's Weapons Item hierarchy for existing copies before importing missing Items.
+### STARS — Sword & Shield
+- Sword Slash: 1d8 slashing.
+- Equipped weapon automatically grants +2 AC.
+- Shield Bash: bonus-action 1d4 bludgeoning with the 5-ft push rider described in chat.
 
-This means updating the module should not normally create a second copy of every bundled weapon. Some versions also migrate specific activities or synchronization behavior on existing world and actor-owned copies where required.
+### STARS — Dual Blades
+- Flurry uses two explicit 1d6 slashing attacks.
+- Demon Mode is a bonus-action toggle.
+- Demon Mode automatically gives +10 ft walking speed and -2 AC.
+- While Demon Mode is active, damage from Flurry — Second Blade automatically rolls +1d6 slashing.
 
-## Version highlights
+## Notes
 
-### v1.6.2
+The module automates bookkeeping where the rules are unambiguous. Tactical conditions such as
+"did not move before Charged Slash", Take Aim's positioning requirement, both scimitars hitting
+the same target, and save riders remain explicit activities/instructions rather than hidden
+automatic decisions.
 
-- Fixed Motorbike / Chainsaw / Chaingun mode switching so activity visibility is synchronized **before** the D&D5e activity picker is built.
-- Mode changes now present the correct activity set on the first subsequent use.
+## v1.1.1 icon update
 
-### v1.6.1
+Added supplied custom icons for:
+- Fault — Twin Scimitars
+- Candy — Electrified Javelin
+- STARS — Sword & Shield
 
-- Added immediate mode-state and prepared-data refreshes after Motorbike / Chainsaw / Chaingun mode changes.
+The bundled item and its activities use the matching icon.
 
-### v1.6.0
 
-- Added Motorbike / Chainsaw / Chaingun.
-- Added Argus Class Steamknight.
-- Added Paris Class Steamknight.
+## v1.2.0 Mechanic-heavy batch
+Adds Teleportation Chakram, Harpoon, Meteor Hammer/Censer, Jet Hammer, Cane Sword/Rifle, Gunheels/Pistols, Longsword, and Gunlance. Also removes the duplicate Dual Blades Demon Mode update hook that caused the ActiveEffect deletion race.
 
-### v1.5.1
 
-- Corrected Berried Delight's Rapid Draw follow-up so its second attack resolves without consuming/checking for a second Action and rolls its own damage on a confirmed hit.
+## v1.2.1 hotfix
+Fixes a duplicate JavaScript helper declaration that prevented the module script from loading, so the mechanic-heavy bundled weapons now import on GM ready.
 
-### v1.5.0
+## v1.2.2 mechanic-heavy stabilization
 
-- Added Kanabo / Iron Maiden.
-- Added Bouquet of Roses.
-- Added Jet-Propelled Skateboard.
-- Added Berried Delight.
+- Harpoon Reel Target and Reel Self now physically move tokens 10 ft toward the other end of the tether.
+- Meteor Hammer/Censer automatically rolls a CON save after a confirmed hit and applies Dazed for 1 round on failure.
+- Jet Hammer Fuel is mirrored to the D&D5e item Uses counter and announced after fuel actions.
+- Longsword Spirit is mirrored to the item Uses counter; notifications show Spirit and White/Yellow/Red level.
+- Gunlance Shells are mirrored to the item Uses counter and announced after shell actions.
+- Cane Sword/Rifle now synchronizes native D&D5e activity visibility before the activity chooser opens.
+- Dual Blades Demon Mode now adds/removes a real 1d6 slashing damage part on Flurry — Second Blade instead of relying on a separate damage hook.
+- Existing world/actor items are migrated on GM ready; deletion/re-import should not be necessary.
 
-### v1.4.0
+## v1.2.3 state-order fixes
 
-- Added Tire Iron & Tires.
-- Added Hatchet.
-- Added Sawblade.
-- Added Cleaver.
-- Added Blast Fists.
-- Added Built-In Blades & Bare-Knuckle Brawling.
+- Meteor Hammer/Censer CON save and Dazed are intentionally manual.
+- Jet Hammer Fuel is checked and spent in `dnd5e.preUseActivity`, preventing powered attacks at insufficient Fuel.
+- Vent / Refuel restores Fuel to 3 without spending Fuel first.
+- Longsword Spirit gain/spend and Spirit Level changes occur only after a confirmed hit.
+- Longsword Spirit attacks are blocked before use if the required Spirit/Spirit Level is unavailable.
+- Dual Blades Demon Mode now toggles from the actor's real ActiveEffect state, fixing inverted ON/OFF behavior.
 
-### v1.3.x
+## v1.2.4 synchronization fixes
 
-Introduced and stabilized Claire's Might, including Stance, Surges, Ratchet, Phial Cascade, boosted Charge Blade actions, Morph synchronization, automatic follow-up attacks, and Earth-Shattering SAED.
+- Jet Hammer Fuel flag and visible Uses counter are now updated atomically, eliminating the one-step display lag.
+- Longsword uses the same correct `dnd5e.postRollAttack(rolls, data)` hit-confirmation pattern as Charge Blade.
+- Longsword state and its visible 0–100 indicator are updated together.
+- Dual Blades now resets to a known Demon Mode OFF state on world load and toggles only from its authoritative stored state.
 
-### v1.2.x
+## v1.2.5 Dual Blades toggle debounce
 
-Added the mechanic-heavy weapon batch and stabilization work for Teleportation Chakram, Harpoon, Meteor Hammer / Censer, Jet Hammer, Cane Sword / Cane Rifle, Gunheels / Pistols, Longsword, Gunlance, and Dual Blades.
+- Demon Mode now ignores duplicate D&D5e activity callbacks from the same button press.
+- One button press can only toggle Demon Mode once.
+- This fixes the first-press no-op / second-press inverted-state behavior.
 
-## Development status
+## v1.2.6 Dual Blades ActiveEffect cleanup
 
-`v1.6.2` completes the currently implemented NPC weapon set. Additional player-character weapon systems are still planned for later releases.
+- Demon Mode now removes all stale/duplicate effects before creating a new one.
+- Turning Demon Mode OFF removes every effect tied to that Dual Blades item.
+- Turning Demon Mode ON creates exactly one `-2 AC / +10 ft movement` effect.
+- World load cleanup purges legacy stacked Demon Mode effects and initializes the weapon OFF.
+- Prevents AC from stacking downward across repeated activations.
 
-## Repository
+## v1.2.7 Dual Blades authoritative effect state
 
-GitHub repository:
+- Demon Mode no longer decides ON/OFF from the stored flag.
+- The actual Demon Mode ActiveEffect is now authoritative.
+- If the effect exists, the next press turns Demon Mode OFF.
+- If no effect exists, the next press turns Demon Mode ON.
+- The stored flag is synchronized afterward to mirror the actual effect state.
 
-```text
-https://github.com/Temmie-Boi/Tems-Weapons-Foundry-Module
-```
+## v1.2.8 startup silence + Dual Blades rewrite
 
+- Jet Hammer and Longsword migration/synchronization no longer emit notifications on world startup.
+- Dual Blades Demon Mode toggle logic was rewritten rather than further patched.
+- Startup only cleans legacy effects and establishes a silent OFF state.
+- Each Demon Mode use explicitly flips OFF->ON or ON->OFF once.
+- Applying the mode first removes every legacy effect from the weapon, then creates exactly one effect when ON.
+- AC, movement, stored state, and Second Blade damage are synchronized from the requested boolean state.
+
+
+## v1.3.1 — Claire's Might
+Adds the Claire's Might feat and Combat Tracker-driven Charge Blade stance automation (3 Surges per combat, 3-turn stance, Ratchet engine, boosted combos, Axe Pump Load/Guard Point/Counter, Phial Cascade, and Earth-Shattering SAED).
+
+## v1.3.3 — Claire activity routing fix
+Suppresses forced Charge Blade actor-sheet rerenders while Claire's Might is resolving. This prevents the originating Claire activity click from being invalidated and falling through to the Charge Blade item chooser.
+
+
+### v1.3.10
+- Blocks the stray Charge Blade activity chooser at the official `dnd5e.preUseItem` hook after a Claire's Might activity.
+- Keeps the guard one-shot and actor-scoped so ordinary Charge Blade use remains unchanged.
+
+
+### v1.3.10
+- Claire's Might now opens a short actor-scoped activity window that completely bypasses the legacy Charge Blade Item.use chooser route during Claire activity resolution.
+- Charge Blade chooser pre-sync no longer rerenders the actor sheet during the originating click.
+
+
+## v1.3.10 Claire's Might architecture reset
+Claire's Might now owns its own activity flow. Its activities stay visible and validate their requirements at use-time. The feat reads/writes the existing Charge Blade's state directly but never invokes or depends on the Charge Blade item-use/activity chooser. Older v1.3.x visibility state on owned Claire's Might feats is reset automatically on startup.
+
+
+### v1.3.13
+- Fixed Claire's Might automatic second strikes to bypass D&D5e's second-action `canUse` gate by rolling the follow-up attack directly. This fixes Ratchet and Phial Cascade throwing “Using this activity isn't currently possible.” after their first strike.
+- Migrates existing Claire's Might world and actor copies to add the Morph activity without replacing the item.
+
+## v1.5.1 weapon batch
+
+- **Coral — Tire Iron & Tires:** Tire Iron, Launch Tire, Ricochet Tire, Tire Boost, and a 3-Tire reloadable resource.
+- **Candy — Hatchet:** fast 1d6 slashing thrown weapon (20/60).
+- **Candy — Sawblade:** 1d8 slashing thrown weapon (30/90) with a 10-ft on-hit reposition rider.
+- **Candy — Cleaver:** 1d10 slashing with a Momentum Cleave option for +1d6 after moving 10 ft.
+- **Candy — Blast Fists:** Blast Punch, Heavy Blast Punch, Blast Launch, and 3 reloadable Blast Charges.
+- **Fault — Built-In Blades & Bare-Knuckle Brawling:** bare-knuckle strikes, chitin blades, automatic two-hit Twin Blade Flurry, Raking Lunge, and Mantis Guard.
+
+Movement/push riders that depend on table positioning are described on their activities for the GM/player to resolve.
+
+## v1.5.1 additions
+
+- **Candy — Kanabo / Iron Maiden:** heavy impact, push/control riders, and Crushing Closure.
+- **Candy — Bouquet of Roses:** Rose Strike, Thorn Scatter, Petal Feint, and Stem Lash.
+- **Coral — Jet-Propelled Skateboard:** 3 Fuel, Jet Rush, Drive-By Strike, Rocket Jump, and Refuel.
+- **Gaunt — Berried Delight:** Judgement Cut, two-hit Rapid Draw, Sheathe Counter, Blink Slash, and Perfect Cut.
+
+Movement, forced movement, area placement, and some control riders are intentionally handled manually where Foundry automation would add unnecessary fragility.
+
+
+## v1.6.0 NPC weapon finale
+
+- **Motorbike / Chainsaw / Chaingun:** three-mode weapon with Motorbike mobility/ram options, Chainsaw pressure and Grind/Rip Through, and Chaingun Burst/Spin Up/Full Auto/Strafing Fire. Multi-hit attacks launch their internal follow-up rolls automatically.
+- **Argus Class Steamknight:** Heavy Cannon, three-shot Sustained Fire, Suppressive Barrage, Brace, Advance, and Overwatch. Brace grants +2 to Heavy Cannon attacks and a fourth Sustained Fire shot; moving ends Brace.
+- **Paris Class Steamknight:** High-Speed Strike, three-shot Burst Fire, Jet Dash, Drive-By Attack, Disengage Burst, and Alpha Strike. Movement riders are manual.
+
+Position-dependent movement, pushes, save areas, firing-lane triggers, and movement prerequisites remain manual where appropriate.
+
+
+## v1.7.0 PC weapon batch
+
+- **Roulette Briefcase / Revolver:** Bonus-action transform, Briefcase Bash, roulette-controlled revolver damage die, Grappling Hook reroll, three-shot Gatling Fire, Explosive Shot, Slot Lever, and 1d6-shot Jackpot Barrage. The single Slot Charge checks for recharge at the start of the wielder's turns while spent and returns on a 6.
+- **Kickin Mystic Sword:** 1d12 Mystic Slash, Dash, Spirit Throw, Recall, Detonate, Hover Ride, Spin Shield, Recall Strike, and the passive Sundering Edge interaction with Blade Breaking Blow.
+
+Remote positioning, Dash movement, grapple movement, and blast-area placement remain manual where table geometry matters.

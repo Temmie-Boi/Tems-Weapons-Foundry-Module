@@ -1,5 +1,5 @@
 /**
- * Tem's Weapons v1.6.0
+ * Tem's Weapons v1.7.0
  * Foundry VTT v14 / D&D5e 5.3.x
  *
  * Weapon identifier:
@@ -780,6 +780,24 @@ function installChargeBladeItemUseWrapper() {
         this.prepareData?.();
       } catch (err) {
         console.error("Tem's Weapons | Motor weapon pre-use visibility sync failed", err);
+      }
+    }
+
+    if (this?.system?.identifier === V170_IDS.ROULETTE) {
+      try {
+        await v170SyncRouletteVisibility(this);
+        this.prepareData?.();
+      } catch (err) {
+        console.error("Tem's Weapons | Roulette weapon pre-use sync failed", err);
+      }
+    }
+
+    if (this?.system?.identifier === V170_IDS.MYSTIC) {
+      try {
+        await v170SyncMysticVisibility(this);
+        this.prepareData?.();
+      } catch (err) {
+        console.error("Tem's Weapons | Mystic Sword pre-use sync failed", err);
       }
     }
 
@@ -2641,6 +2659,334 @@ Hooks.on("createItem", async item => {
   }
 });
 
+
+
+/* ------------------------------------------------------------------------- */
+/* v1.7.0 PC WEAPON BATCH                                                    */
+/* ------------------------------------------------------------------------- */
+
+const V170_IDS = Object.freeze({
+  ROULETTE: "tems-roulette-briefcase-revolver",
+  MYSTIC: "tems-kickin-mystic-sword"
+});
+
+const V170_ROULETTE_INTERNAL = new Set([
+  "Gatling Fire — Shot 2", "Gatling Fire — Shot 3",
+  "Jackpot Barrage — Shot 2", "Jackpot Barrage — Shot 3", "Jackpot Barrage — Shot 4",
+  "Jackpot Barrage — Shot 5", "Jackpot Barrage — Shot 6"
+]);
+const V170_ROULETTE_DIE_ATTACKS = new Set([
+  "Revolver Shot", "Gatling Fire", "Gatling Fire — Shot 2", "Gatling Fire — Shot 3",
+  "Jackpot Barrage", "Jackpot Barrage — Shot 2", "Jackpot Barrage — Shot 3",
+  "Jackpot Barrage — Shot 4", "Jackpot Barrage — Shot 5", "Jackpot Barrage — Shot 6"
+]);
+const V170_MYSTIC_RIDE_EFFECT = "Kickin Mystic Sword — Hover Ride";
+const V170_MYSTIC_SHIELD_EFFECT = "Kickin Mystic Sword — Spin Shield";
+
+function v170RouletteForm(item) {
+  return String(item?.getFlag("world", "temsRouletteForm") ?? "briefcase") === "revolver" ? "revolver" : "briefcase";
+}
+
+function v170RouletteDie(item) {
+  const die = Number(item?.getFlag("world", "temsRouletteDie") ?? 8);
+  return [4, 6, 8, 10, 12].includes(die) ? die : 8;
+}
+
+async function v170SetActivityVisible(item, activity, visible, updates) {
+  if (!activity) return;
+  const desiredMin = null;
+  const desiredMax = visible ? null : -1;
+  const curMin = activity.visibility?.level?.min ?? null;
+  const curMax = activity.visibility?.level?.max ?? null;
+  if (curMin !== desiredMin) updates[`system.activities.${activity.id}.visibility.level.min`] = desiredMin;
+  if (curMax !== desiredMax) updates[`system.activities.${activity.id}.visibility.level.max`] = desiredMax;
+}
+
+async function v170SyncRouletteDamage(item) {
+  if (!item || item.system?.identifier !== V170_IDS.ROULETTE) return;
+  const die = v170RouletteDie(item);
+  const updates = {};
+  for (const activity of Array.from(item.system.activities ?? [])) {
+    if (!V170_ROULETTE_DIE_ATTACKS.has(activity.name)) continue;
+    const part = activity.damage?.parts?.[0];
+    if (!part) continue;
+    if (Number(part.denomination) !== die) {
+      updates[`system.activities.${activity.id}.damage.parts.0.denomination`] = die;
+    }
+  }
+  if (Object.keys(updates).length) await item.update(updates, {render:false});
+}
+
+async function v170SyncRouletteVisibility(item) {
+  if (!item || item.system?.identifier !== V170_IDS.ROULETTE) return;
+  const form = v170RouletteForm(item);
+  const armed = Boolean(item.getFlag("world", "temsRouletteJackpotArmed") ?? false);
+  const updates = {};
+
+  for (const activity of Array.from(item.system.activities ?? [])) {
+    const n = activity.name;
+    let visible = true;
+    if (V170_ROULETTE_INTERNAL.has(n)) visible = false;
+    else if (n === "Transform" || n === "Spin Roulette") visible = true;
+    else if (n === "Briefcase Bash") visible = form === "briefcase";
+    else if (["Grappling Hook", "Revolver Shot", "Gatling Fire", "Explosive Shot", "Slot Lever"].includes(n)) visible = form === "revolver";
+    else if (n === "Jackpot Barrage") visible = form === "revolver" && armed;
+    await v170SetActivityVisible(item, activity, visible, updates);
+  }
+
+  if (Object.keys(updates).length) await item.update(updates, {render:false});
+  await v170SyncRouletteDamage(item);
+  item.prepareData?.();
+  if (item.sheet?.rendered) item.sheet.render({force:true});
+  if (item.actor?.sheet?.rendered) item.actor.sheet.render({force:true});
+}
+
+async function v170SetRouletteForm(item, form) {
+  await item.setFlag("world", "temsRouletteForm", form === "revolver" ? "revolver" : "briefcase");
+  await v170SyncRouletteVisibility(item);
+  ui.notifications.info(`Roulette weapon → ${form === "revolver" ? "Revolver" : "Briefcase"} form.`);
+}
+
+async function v170RollRoulette(item, reason="Roulette") {
+  const roll = await new Roll("1d6").evaluate();
+  const face = Number(roll.total ?? 1);
+  const table = {1:4, 2:6, 3:8, 4:10, 5:12, 6:12};
+  const die = table[face] ?? 8;
+  await item.setFlag("world", "temsRouletteDie", die);
+  await v170SyncRouletteDamage(item);
+  await roll.toMessage({
+    speaker: ChatMessage.getSpeaker({actor:item.actor}),
+    flavor: `${item.name} — ${reason}: revolver damage die becomes d${die}`
+  });
+  ui.notifications.info(`${reason}: revolver damage die is now d${die}.`);
+  return die;
+}
+
+async function v170RollFollowups(item, names) {
+  for (const name of names) {
+    const activity = Array.from(item?.system?.activities ?? []).find(a => a.name === name);
+    if (!activity) continue;
+    try {
+      const rolls = await activity.rollAttack();
+      const selected = Array.from(game.user.targets ?? []);
+      const hit = selected.length && (rolls ?? []).some(roll => selected.some(token => attackHitsTarget(roll, token)));
+      if (hit && typeof activity.rollDamage === "function") await activity.rollDamage();
+    } catch (err) {
+      console.error(`Tem's Weapons | v1.7 follow-up failed: ${name}`, err);
+      ui.notifications.warn(`${name} could not be launched automatically. Check the console.`);
+      break;
+    }
+  }
+}
+
+function v170MysticAway(item) {
+  return Boolean(item?.getFlag("world", "temsMysticSwordAway") ?? false);
+}
+
+async function v170SetMysticRide(item, active) {
+  const actor = item?.actor;
+  if (!actor) return;
+  await removeNamedEffect(actor, V170_MYSTIC_RIDE_EFFECT);
+  await item.setFlag("world", "temsMysticSwordRiding", Boolean(active));
+  if (active) {
+    await actor.createEmbeddedDocuments("ActiveEffect", [{
+      name: V170_MYSTIC_RIDE_EFFECT,
+      img: item.img,
+      origin: item.uuid,
+      disabled: false,
+      transfer: false,
+      changes: [{
+        key: "system.attributes.movement.walk",
+        mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+        value: "10",
+        priority: 30
+      }]
+    }]);
+  }
+  ui.notifications.info(`Hover Ride ${active ? "ON (+10 ft movement)" : "OFF"}.`);
+}
+
+async function v170SyncMysticVisibility(item) {
+  if (!item || item.system?.identifier !== V170_IDS.MYSTIC) return;
+  const away = v170MysticAway(item);
+  const updates = {};
+  for (const activity of Array.from(item.system.activities ?? [])) {
+    const n = activity.name;
+    let visible = true;
+    if (["Recall", "Detonate", "Recall Strike"].includes(n)) visible = away;
+    else if (["Mystic Slash", "Dash", "Spirit Throw", "Hover Ride", "Spin Shield"].includes(n)) visible = !away;
+    await v170SetActivityVisible(item, activity, visible, updates);
+  }
+  if (Object.keys(updates).length) await item.update(updates, {render:false});
+  item.prepareData?.();
+  if (item.sheet?.rendered) item.sheet.render({force:true});
+  if (item.actor?.sheet?.rendered) item.actor.sheet.render({force:true});
+}
+
+async function v170SetMysticAway(item, away) {
+  await item.setFlag("world", "temsMysticSwordAway", Boolean(away));
+  if (away && Boolean(item.getFlag("world", "temsMysticSwordRiding") ?? false)) {
+    await v170SetMysticRide(item, false);
+  }
+  await v170SyncMysticVisibility(item);
+}
+
+Hooks.on("dnd5e.preUseActivity", async activity => {
+  const item = getItem(activity);
+  if (!item) return;
+  const id = item.system?.identifier;
+  const n = activity?.name;
+
+  if (id === V170_IDS.ROULETTE) {
+    await v170SyncRouletteVisibility(item);
+    if (n === "Slot Lever" && Number(item.system?.uses?.spent ?? 0) >= 1) {
+      ui.notifications.warn("The slot-machine Charge is spent and has not recharged yet.");
+      return false;
+    }
+    if (n === "Jackpot Barrage" && !Boolean(item.getFlag("world", "temsRouletteJackpotArmed") ?? false)) {
+      ui.notifications.warn("Jackpot Barrage requires Slot Lever to be armed first.");
+      return false;
+    }
+  }
+
+  if (id === V170_IDS.MYSTIC) {
+    await v170SyncMysticVisibility(item);
+  }
+});
+
+Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
+  const item = getItem(activity);
+  if (!item) return;
+  const id = item.system?.identifier;
+  const n = activity?.name;
+
+  if (id === V170_IDS.ROULETTE) {
+    if (n === "Transform") {
+      return v170SetRouletteForm(item, v170RouletteForm(item) === "briefcase" ? "revolver" : "briefcase");
+    }
+    if (n === "Spin Roulette") return v170RollRoulette(item, "Spin Roulette");
+    if (n === "Slot Lever") {
+      await item.update({"system.uses.spent": 1}, {render:false});
+      await item.setFlag("world", "temsRouletteJackpotArmed", true);
+      await v170SyncRouletteVisibility(item);
+      ui.notifications.info("Slot Lever armed — Jackpot Barrage unlocked.");
+      return;
+    }
+    if (n === "Jackpot Barrage") {
+      const roll = await new Roll("1d6").evaluate();
+      const shots = Math.max(1, Math.min(6, Number(roll.total ?? 1)));
+      await item.update({
+        "flags.world.temsRouletteJackpotArmed": false,
+        "flags.world.temsRouletteJackpotShots": shots
+      }, {render:false});
+      await roll.toMessage({speaker:ChatMessage.getSpeaker({actor:item.actor}), flavor:`${item.name} — Jackpot Barrage: ${shots} shot${shots === 1 ? "" : "s"}`});
+      await v170SyncRouletteVisibility(item);
+      return;
+    }
+  }
+
+  if (id === V170_IDS.MYSTIC) {
+    if (n === "Recall") {
+      await v170SetMysticAway(item, false);
+      ui.notifications.info("Kickin Mystic Sword recalled to hand.");
+      return;
+    }
+    if (n === "Detonate") {
+      const actor = item.actor;
+      const roll = await new CONFIG.Dice.DamageRoll("2d6", actor?.getRollData?.() ?? {}, {type:"force"}).evaluate();
+      await roll.toMessage({speaker:ChatMessage.getSpeaker({actor}), flavor:`${item.name} — Detonate`});
+      return;
+    }
+    if (n === "Hover Ride") {
+      const active = !Boolean(item.getFlag("world", "temsMysticSwordRiding") ?? false);
+      await v170SetMysticRide(item, active);
+      return;
+    }
+    if (n === "Spin Shield") {
+      const actor = item.actor;
+      if (!actor) return;
+      await removeNamedEffect(actor, V170_MYSTIC_SHIELD_EFFECT);
+      await actor.createEmbeddedDocuments("ActiveEffect", [{
+        name: V170_MYSTIC_SHIELD_EFFECT,
+        img: item.img,
+        origin: item.uuid,
+        disabled: false,
+        transfer: false,
+        duration: {rounds:1},
+        changes: [{
+          key: "system.attributes.ac.bonus",
+          mode: CONST.ACTIVE_EFFECT_MODES.ADD,
+          value: "2",
+          priority: 30
+        }]
+      }]);
+      ui.notifications.info("Spin Shield: +2 AC against the triggering attack. Remove the effect after that attack resolves.");
+      return;
+    }
+  }
+});
+
+Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
+  const activity = data?.subject;
+  const item = getItem(activity);
+  if (!item) return;
+  const id = item.system?.identifier;
+  const n = activity?.name;
+
+  if (id === V170_IDS.ROULETTE) {
+    if (n === "Grappling Hook") return v170RollRoulette(item, "Grappling Hook");
+    if (n === "Gatling Fire") return v170RollFollowups(item, ["Gatling Fire — Shot 2", "Gatling Fire — Shot 3"]);
+    if (n === "Jackpot Barrage") {
+      const shots = Math.max(1, Math.min(6, Number(item.getFlag("world", "temsRouletteJackpotShots") ?? 1)));
+      const names = [];
+      for (let i=2; i<=shots; i++) names.push(`Jackpot Barrage — Shot ${i}`);
+      await item.setFlag("world", "temsRouletteJackpotShots", 0);
+      if (names.length) return v170RollFollowups(item, names);
+      return;
+    }
+  }
+
+  if (id === V170_IDS.MYSTIC) {
+    if (n === "Spirit Throw") {
+      await v170SetMysticAway(item, true);
+      ui.notifications.info("Kickin Mystic Sword is away — Recall, Detonate, and Recall Strike unlocked.");
+      return;
+    }
+    if (n === "Recall Strike") {
+      await v170SetMysticAway(item, false);
+      ui.notifications.info("Recall Strike returned the sword to hand.");
+      return;
+    }
+  }
+});
+
+Hooks.on("updateCombat", async combat => {
+  const actor = combat?.combatant?.actor;
+  if (!actor) return;
+  const item = actor.items.find(i => i.system?.identifier === V170_IDS.ROULETTE);
+  if (!item || Number(item.system?.uses?.spent ?? 0) < 1) return;
+
+  const key = `${combat.id}:${combat.round ?? 0}:${combat.turn ?? 0}`;
+  if (String(item.getFlag("world", "temsRouletteRechargeTurnKey") ?? "") === key) return;
+  await item.setFlag("world", "temsRouletteRechargeTurnKey", key);
+
+  const roll = await new Roll("1d6").evaluate();
+  await roll.toMessage({speaker:ChatMessage.getSpeaker({actor}), flavor:`${item.name} — Charge recharge check (6 recharges)`});
+  if (Number(roll.total) === 6) {
+    await item.update({"system.uses.spent": 0}, {render:false});
+    ui.notifications.info("Roulette weapon Charge recharged.");
+  }
+});
+
+Hooks.on("createItem", async item => {
+  try {
+    if (item.system?.identifier === V170_IDS.ROULETTE) await v170SyncRouletteVisibility(item);
+    if (item.system?.identifier === V170_IDS.MYSTIC) await v170SyncMysticVisibility(item);
+  } catch (err) {
+    console.warn("Tem's Weapons | v1.7 createItem sync failed", item, err);
+  }
+});
+
 /* ------------------------------------------------------------------------- */
 /* BUNDLED WEAPON INSTALLER                                                  */
 /* ------------------------------------------------------------------------- */
@@ -2677,7 +3023,9 @@ const BUNDLED_WEAPONS = [
   { path: "items/gaunt/berried-delight.json", identifier: "tems-gaunt-berried-delight", folder: "Gaunt" },
   { path: "items/coral/motorbike-chainsaw-chaingun.json", identifier: "tems-motorbike-chainsaw-chaingun", folder: "Coral" },
   { path: "items/fault/argus-steamknight.json", identifier: "tems-argus-steamknight", folder: "Fault" },
-  { path: "items/rival/paris-steamknight.json", identifier: "tems-paris-steamknight", folder: "Rival" }
+  { path: "items/rival/paris-steamknight.json", identifier: "tems-paris-steamknight", folder: "Rival" },
+  { path: "items/pc-party/roulette-briefcase-revolver.json", identifier: "tems-roulette-briefcase-revolver", folder: null },
+  { path: "items/pc-party/kickin-mystic-sword.json", identifier: "tems-kickin-mystic-sword", folder: null }
 ];
 
 async function ensureItemFolder(name, parent=null) {
@@ -2828,6 +3176,8 @@ Hooks.once("ready", async () => {
         }
         if (item.system?.identifier === V160_IDS.MOTOR) await v160SyncMotorVisibility(item);
         if (item.system?.identifier === V160_IDS.ARGUS) await v160SyncArgus(item);
+        if (item.system?.identifier === V170_IDS.ROULETTE) await v170SyncRouletteVisibility(item);
+        if (item.system?.identifier === V170_IDS.MYSTIC) await v170SyncMysticVisibility(item);
       } catch (err) {
         console.warn("Tem's Weapons | Straightforward weapon initial sync failed", item, err);
       }
@@ -2938,5 +3288,5 @@ Hooks.once("ready", async () => {
     catch (err) { console.warn("Tem's Weapons | Claire's Might visibility reset failed", item, err); }
   }
 
-  console.log("Tem's Weapons | v1.3.9 Ready");
+  console.log("Tem's Weapons | v1.7.0 Ready");
 });
