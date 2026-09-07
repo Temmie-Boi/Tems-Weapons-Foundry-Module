@@ -2180,6 +2180,35 @@ async function ensureItemFolder(name, parent=null) {
   return folder;
 }
 
+async function ensureClaireMorphActivity(item, sourceData=null) {
+  if (!isClairesMight(item)) return false;
+
+  const alreadyHasMorph = Array.from(item.system.activities ?? []).some(a => a.name === CM_NAMES.MORPH);
+  if (alreadyHasMorph) return false;
+
+  try {
+    let source = sourceData;
+    if (!source) {
+      const response = await fetch(`modules/tems-weapons/items/claire/claires-might.json`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      source = await response.json();
+    }
+
+    const sourceActivities = source?.system?.activities ?? {};
+    const entry = Object.entries(sourceActivities).find(([, activity]) => activity?.name === CM_NAMES.MORPH);
+    if (!entry) throw new Error("Bundled Claire's Might has no Morph activity");
+
+    const [activityId, activityData] = entry;
+    const clone = foundry.utils.deepClone(activityData);
+    await item.update({[`system.activities.${activityId}`]: clone}, {render:false});
+    console.log(`Tem's Weapons | Added missing Morph activity to ${item.uuid}`);
+    return true;
+  } catch (err) {
+    console.error("Tem's Weapons | Could not add Morph to existing Claire's Might", item, err);
+    return false;
+  }
+}
+
 async function installBundledWeapons() {
   if (!game.user.isGM) return;
 
@@ -2207,7 +2236,13 @@ async function installBundledWeapons() {
       return false;
     });
 
-    if (existing) continue;
+    if (existing) {
+      // v1.3.11 migration: older Claire's Might copies predate the Morph
+      // activity. The installer is intentionally duplicate-safe, so add only
+      // the missing activity instead of replacing the user's existing feat.
+      if (entry.identifier === CM_IDENTIFIER) await ensureClaireMorphActivity(existing);
+      continue;
+    }
 
     try {
       const response = await fetch(`modules/tems-weapons/${entry.path}`);
@@ -2237,8 +2272,10 @@ Hooks.once("ready", async () => {
   await installBundledWeapons();
 
   // Sync Claire's Might on actors without changing existing Charge Blade state.
+  // Also migrate actor-owned copies created before Morph was added.
   for (const actor of game.actors) {
     const feat = getClaireFeat(actor);
+    if (feat) await ensureClaireMorphActivity(feat);
     if (!feat) continue;
     try {
       const surges = clamp(feat.getFlag(SCOPE, "temsClaireSurges") ?? CM_MAX_SURGES, 0, CM_MAX_SURGES);
