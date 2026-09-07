@@ -771,6 +771,18 @@ function installChargeBladeItemUseWrapper() {
       }
     }
 
+    // Motorbike / Chainsaw / Chaingun also uses dynamic activity visibility.
+    // Sync immediately before D&D5e builds the activity chooser so the first
+    // click after a mode change sees the new mode instead of stale canUse data.
+    if (this?.system?.identifier === "tems-motorbike-chainsaw-chaingun") {
+      try {
+        await v160SyncMotorVisibility(this);
+        this.prepareData?.();
+      } catch (err) {
+        console.error("Tem's Weapons | Motor weapon pre-use visibility sync failed", err);
+      }
+    }
+
     return originalUse.call(this, config, dialog, message);
   };
 

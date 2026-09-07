@@ -1,4 +1,4 @@
-# Tem's Weapons v1.6.1
+# Tem's Weapons v1.6.2
 
 Foundry VTT v14 / D&D5e 5.3.x
 
