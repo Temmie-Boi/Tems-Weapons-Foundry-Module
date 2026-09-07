@@ -16,6 +16,16 @@ Tested with:
 
 ## Installation
 
+### Install using the Manifest URL
+
+In Foundry VTT, open **Add-on Modules**, choose **Install Module**, and paste this into the **Manifest URL** field:
+
+```text
+https://raw.githubusercontent.com/Temmie-Boi/Tems-Weapons-Foundry-Module/main/module.json
+```
+
+Then click **Install**. After installation, open your world and enable **Tem's Weapons** under **Manage Modules**.
+
 ### Manual installation
 
 1. Download the ZIP for the version you want from the GitHub Releases page.
