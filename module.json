@@ -2,7 +2,7 @@
   "id": "tems-weapons",
   "title": "Tem's Weapons",
   "description": "Tem's custom D&D5e weapon library and automation, including Charge Blade and Claire's Might.",
-  "version": "1.3.8",
+  "version": "1.3.9",
   "compatibility": {
     "minimum": "14",
     "verified": "14"

@@ -435,6 +435,8 @@ Hooks.on("dnd5e.postCreateUsageMessage", async (activity) => {
     case NAMES.MORPH:
       state.mode = state.mode === "sword" ? "axe" : "sword";
       await writeState(item, state);
+      const claireFeat = getClaireFeat(item.actor);
+      if (claireFeat) await cmSyncVisibility(claireFeat);
       notifyState(item, `Morphed to ${state.mode === "axe" ? "Axe" : "Sword"} Mode`);
       break;
 
@@ -1466,6 +1468,7 @@ function cmScheduleActorRender(_actor, _delay=200) {
 
 const CM_NAMES = Object.freeze({
   STANCE: "Claire's Stance",
+  MORPH: "Morph",
   RATCHET_1: "Ratchet",
   RATCHET_2: "Ratchet — Second Strike",
   CASCADE_1: "Phial Cascade",
@@ -1621,17 +1624,52 @@ async function cmResetActivityVisibility(feat) {
   if (Object.keys(updates).length) await feat.update(updates, {render:false});
 }
 
-// v1.3.8 architecture: Claire's activities stay visible. Legality is enforced
-// only by dnd5e.preUseActivity. This avoids rewriting the actor sheet/activity
-// list during clicks and completely separates Claire's feat UI from the
-// Charge Blade's item chooser.
+// Claire's Stance is the master visibility switch.  Outside Stance, only the
+// Stance activity is offered.  While Stance is active, the feat reads the
+// *actual* Charge Blade mode/resources and exposes only legal boosted options.
 async function cmSyncVisibility(feat) {
-  await cmResetActivityVisibility(feat);
+  if (!isClairesMight(feat)) return;
+  const blade = getClaireChargeBlade(feat.actor);
+  if (!feat.actor || !blade) {
+    // Keep source/world copies editable; owned copies without a blade show only
+    // the stance button through their normal validation path.
+    if (!feat.actor) return cmResetActivityVisibility(feat);
+  }
+
+  const lockKey = feat.uuid;
+  if (cmVisibilityLocks.has(lockKey)) return;
+  cmVisibilityLocks.add(lockKey);
+  try {
+    const updates = {};
+    for (const activity of feat.system.activities ?? []) {
+      let visible;
+      if (activity.name === CM_NAMES.STANCE) {
+        visible = blade ? cmActivityVisible(activity.name, feat, blade) : true;
+      } else if (activity.name === CM_NAMES.MORPH) {
+        visible = Boolean(blade) && cmRead(feat).stanceActive;
+      } else {
+        visible = blade ? cmActivityVisible(activity.name, feat, blade) : false;
+      }
+
+      const desiredMin = null;
+      const desiredMax = visible ? null : -1;
+      const currentMin = activity.visibility?.level?.min ?? null;
+      const currentMax = activity.visibility?.level?.max ?? null;
+      if (currentMin !== desiredMin) updates[`system.activities.${activity.id}.visibility.level.min`] = desiredMin;
+      if (currentMax !== desiredMax) updates[`system.activities.${activity.id}.visibility.level.max`] = desiredMax;
+    }
+
+    if (Object.keys(updates).length) {
+      await feat.update(updates, {render:false});
+    }
+  } finally {
+    cmVisibilityLocks.delete(lockKey);
+  }
 }
 
 async function cmSyncActor(actor) {
   const feat = getClaireFeat(actor);
-  if (feat) await cmResetActivityVisibility(feat);
+  if (feat) await cmSyncVisibility(feat);
 }
 
 async function cmEndStance(feat, {notify=true}={}) {
@@ -1648,6 +1686,7 @@ async function cmEndStance(feat, {notify=true}={}) {
   await cmRemoveEffect(feat.actor, CM_STANCE_EFFECT);
   await cmRemoveEffect(feat.actor, CM_RATCHET_EFFECT);
   await cmRemoveEffect(feat.actor, CM_GUARD_EFFECT);
+  await cmSyncVisibility(feat);
   if (notify && wasActive) ui.notifications.info("Claire's Stance ended. Ratchet shut down.");
 }
 
@@ -1668,6 +1707,7 @@ async function cmRatchetTick(feat, blade) {
   else if (cb.charge < 5) cb.charge = 5;
   else return; // Red: engine idles.
   await writeState(blade, cb, {renderActor:false});
+  await cmSyncVisibility(feat);
   ui.notifications.info(`Ratchet engine: Charge ${before} → ${cb.charge}.`);
 }
 
@@ -1844,6 +1884,17 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
   if (!actor || !blade) return;
   const n = activity.name;
 
+  // preUseActivity is a UI/UX guard, but some D&D5e workflows can still create
+  // a usage message after an async pre-use hook returns false.  Re-check the
+  // authoritative state here before making *any* Claire's Might state change.
+  const liveCm = cmRead(feat);
+  if (n === CM_NAMES.STANCE) {
+    if (!getActiveCombatForActor(actor) || liveCm.stanceActive || liveCm.surges < 1) return;
+  } else {
+    if (!liveCm.stanceActive) return;
+    if (!cmActivityVisible(n, feat, blade) && n !== CM_NAMES.MORPH) return;
+  }
+
   if (n === CM_NAMES.STANCE) {
     const cm = cmRead(feat);
     await cmSetState(feat, {
@@ -1859,7 +1910,17 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
     cb.charge = Math.max(cb.charge, 3);
     await writeState(blade, cb, {renderActor:false});
     await cmApplyMarkerEffect(actor, feat, CM_STANCE_EFFECT);
+    await cmSyncVisibility(feat);
     ui.notifications.info(`Claire's Stance activated — Turn 1/3, ${cm.surges - 1} Surge${cm.surges - 1 === 1 ? "" : "s"} remaining, Charge ${cb.charge}/5.`);
+    return;
+  }
+
+  if (n === CM_NAMES.MORPH) {
+    const cb = readState(blade);
+    cb.mode = cb.mode === "sword" ? "axe" : "sword";
+    await writeState(blade, cb, {renderActor:false});
+    await cmSyncVisibility(feat);
+    notifyState(blade, `Claire's Might Morph → ${cb.mode === "axe" ? "Axe" : "Sword"} Mode`);
     return;
   }
 
@@ -1885,6 +1946,7 @@ Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
     cb.phials = gained;
     cb.charge = 0;
     await writeState(blade, cb, {renderActor:false});
+    await cmSyncVisibility(feat);
     ui.notifications.info(`Axe Pump Load — loaded ${gained} Phials; remained in Axe Mode.`);
     return;
   }
@@ -1930,6 +1992,9 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
   const hit = targets.length && (rolls ?? []).some(roll => targets.some(token => attackHitsTarget(roll, token)));
   const n = activity.name;
 
+  // Ignore stale chat cards / delayed rolls after Stance has ended.
+  if (!cmRead(feat).stanceActive) return;
+
   if (!targets.length) {
     ui.notifications.warn(`${n} rolled with no target selected; Claire's Might hit-based automation could not confirm a hit.`);
   }
@@ -1943,6 +2008,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
     if (hits >= 2) cb.charge = Math.max(cb.charge, 4);
     else if (hits >= 1) cb.charge = Math.max(cb.charge, 3);
     await writeState(blade, cb, {renderActor:false});
+    await cmSyncVisibility(feat);
     await cmSetState(feat, {ratchetActive:true, ratchetHits:hits, ratchetTurnKey:key}, {sync:false});
     ui.notifications.info(`Ratchet: ${hits}/2 confirmed hit${hits === 1 ? "" : "s"} this turn — Charge ${cb.charge}/5.`);
     return;
@@ -1957,6 +2023,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
       hits = clamp(hits + 1, 0, 2);
       cb.charge = clamp(cb.charge + 1, 0, 5);
       await writeState(blade, cb, {renderActor:false});
+      await cmSyncVisibility(feat);
     }
     await cmSetState(feat, {cascadeHits:hits, cascadeTurnKey:key}, {sync:false});
 
@@ -1967,6 +2034,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
         live.phials = gained;
         live.charge = 0;
         await writeState(blade, live, {renderActor:false});
+        await cmSyncVisibility(feat);
         ui.notifications.info(`Phial Cascade: ${hits} hit${hits === 1 ? "" : "s"}; automatically loaded ${gained} Phials.`);
       } else if (hits >= 1) {
         ui.notifications.info(`Phial Cascade hit, but Charge ${live.charge}/5 is below the loading threshold.`);
@@ -1983,6 +2051,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
       const cb = readState(blade);
       cb.charge = clamp(cb.charge + 1, 0, 5);
       await writeState(blade, cb, {renderActor:false});
+      await cmSyncVisibility(feat);
       ui.notifications.info(`${n} hit: +1 Charge (${cb.charge}/5).`);
     }
     return;
@@ -1993,6 +2062,7 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
       const cb = readState(blade);
       cb.phials = clamp(cb.phials - 1, 0, 5);
       await writeState(blade, cb, {renderActor:false});
+      await cmSyncVisibility(feat);
       ui.notifications.info(`Boosted Axe Combo discharge hit: -1 Phial (${cb.phials}/5).`);
     }
     return;
@@ -2003,11 +2073,12 @@ Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
       const cb = readState(blade);
       cb.phials = clamp(cb.phials - 1, 0, 5);
       await writeState(blade, cb, {renderActor:false});
+      await cmSyncVisibility(feat);
       ui.notifications.info(`Axe Counter hit: -1 Phial (${cb.phials}/5).`);
     } else {
       ui.notifications.info("Axe Counter missed — no Phial spent.");
     }
-    await cmSetState(feat, {counterReady:false}, {sync:false});
+    await cmSetState(feat, {counterReady:false}, {sync:true});
     await cmRemoveEffect(actor, CM_GUARD_EFFECT);
   }
 });
@@ -2037,11 +2108,15 @@ Hooks.on("dnd5e.rollDamage", async (rolls, data) => {
   cb.phials = 0;
   cb.mode = "sword";
   await writeState(blade, cb, {renderActor:false});
+  await cmSyncVisibility(feat);
   ui.notifications.info(`Earth-Shattering SAED: spent ${spent} Phial${spent === 1 ? "" : "s"}, returned to Sword Mode. Claire's Stance continues if time remains.`);
 });
 
 Hooks.on("createItem", async item => {
-  if (isClairesMight(item)) await cmResetActivityVisibility(item);
+  if (isClairesMight(item)) {
+    if (item.actor) await cmSyncVisibility(item);
+    else await cmResetActivityVisibility(item);
+  }
 });
 
 /* ------------------------------------------------------------------------- */
@@ -2273,7 +2348,7 @@ Hooks.once("ready", async () => {
           await syncActivityVisibility(item);
         }
         if (isClairesMight(item)) {
-          await cmResetActivityVisibility(item);
+          await cmSyncVisibility(item);
         }
       } catch (err) {
         console.warn("Tem's Weapons | Initial sync failed", item, err);
@@ -2287,5 +2362,5 @@ Hooks.once("ready", async () => {
     catch (err) { console.warn("Tem's Weapons | Claire's Might visibility reset failed", item, err); }
   }
 
-  console.log("Tem's Weapons | v1.3.8 Ready");
+  console.log("Tem's Weapons | v1.3.9 Ready");
 });
