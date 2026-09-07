@@ -707,12 +707,13 @@ function installChargeBladeItemUseWrapper() {
   const originalUse = proto.use;
 
   proto.use = async function(config={}, dialog={}, message={}) {
-    // Claire's Might activities can cause the D&D5e actor sheet to issue a
-    // second, unintended Item.use() for the owned Charge Blade during the same
-    // click.  Suppress only that immediate stray call; ordinary Charge Blade
-    // uses remain unchanged.
-    if (isChargeBlade(this) && cmShouldSuppressChargeBladeUse(this)) {
-      console.debug("Tem's Weapons | Suppressed stray Charge Blade chooser after Claire's Might activity.");
+    // The actor sheet can bubble a Claire's Might activity click into the owned
+    // Charge Blade item row. During that short Claire activity window, bypass
+    // the old Charge Blade item-use/chooser route completely. This is scoped by
+    // actor and time, so normal Charge Blade clicks outside the Claire activity
+    // resolution path are untouched.
+    if (isChargeBlade(this) && cmClaireActivityWindowActive(this)) {
+      console.debug("Tem's Weapons | Bypassed Charge Blade item-use during Claire's Might activity.");
       return null;
     }
 
@@ -720,7 +721,9 @@ function installChargeBladeItemUseWrapper() {
       try {
         await expireShieldIfNeeded(this);
         await syncSwordShieldAC(this);
-        await syncActivityVisibility(this);
+        // Pre-sync chooser state without rerendering the actor sheet inside the
+        // original click. The chooser will read the freshly-prepared activities.
+        await syncActivityVisibility(this, {renderActor:false});
         this.prepareData?.();
       } catch (err) {
         console.error("Tem's Weapons | Charge Blade pre-use visibility sync failed", err);
@@ -1459,7 +1462,7 @@ const CM_GUARD_EFFECT = "Claire's Might — Axe Guard Point";
 const CM_MAX_SURGES = 3;
 const cmVisibilityLocks = new Set();
 const cmCombatTurnCache = new Map();
-const cmChargeBladeUseSuppressUntil = new Map();
+const cmClaireActivityBlockUntil = new Map();
 const cmDeferredRenderTimers = new Map();
 
 /**
@@ -1484,22 +1487,20 @@ function cmScheduleActorRender(actor, delay=200) {
   cmDeferredRenderTimers.set(actor.id, timer);
 }
 
-function cmArmChargeBladeUseSuppression(actor, ms=1500) {
+function cmBeginClaireActivityWindow(actor, ms=1000) {
   if (!actor?.id) return;
-  cmChargeBladeUseSuppressUntil.set(actor.id, Date.now() + ms);
+  cmClaireActivityBlockUntil.set(actor.id, Date.now() + ms);
 }
 
-function cmShouldSuppressChargeBladeUse(blade) {
+function cmClaireActivityWindowActive(blade) {
   const actorId = blade?.actor?.id;
   if (!actorId) return false;
-  const until = Number(cmChargeBladeUseSuppressUntil.get(actorId) ?? 0);
+  const until = Number(cmClaireActivityBlockUntil.get(actorId) ?? 0);
   if (!until) return false;
   if (Date.now() > until) {
-    cmChargeBladeUseSuppressUntil.delete(actorId);
+    cmClaireActivityBlockUntil.delete(actorId);
     return false;
   }
-  // One-shot suppression: consume the guard as soon as the stray call arrives.
-  cmChargeBladeUseSuppressUntil.delete(actorId);
   return true;
 }
 
@@ -1815,8 +1816,8 @@ Hooks.on("deleteCombat", async combat => {
 // multi-activity chooser is configured, while consuming the one-shot guard.
 Hooks.on("dnd5e.preUseItem", (item) => {
   if (!isChargeBlade(item)) return;
-  if (!cmShouldSuppressChargeBladeUse(item)) return;
-  console.warn("Tem's Weapons | Blocked stray Charge Blade item-use after Claire's Might (preUseItem).");
+  if (!cmClaireActivityWindowActive(item)) return;
+  console.debug("Tem's Weapons | Blocked Charge Blade preUseItem during Claire's Might activity.");
   return false;
 });
 
@@ -1837,7 +1838,7 @@ Hooks.on("dnd5e.preUseActivity", async activity => {
   // Guard the current click against the actor-sheet click-through that can
   // otherwise open the Charge Blade's multi-activity chooser after this
   // Claire's Might activity resolves.
-  cmArmChargeBladeUseSuppression(actor);
+  cmBeginClaireActivityWindow(actor);
 
   if (n === CM_NAMES.STANCE) {
     if (!getActiveCombatForActor(actor)) {
