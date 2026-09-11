@@ -211,3 +211,17 @@ Position-dependent movement, pushes, save areas, firing-lane triggers, and movem
 - **Kickin Mystic Sword:** 1d12 Mystic Slash, Dash, Spirit Throw, Recall, Detonate, Hover Ride, Spin Shield, Recall Strike, and the passive Sundering Edge interaction with Blade Breaking Blow.
 
 Remote positioning, Dash movement, grapple movement, and blast-area placement remain manual where table geometry matters.
+
+## v1.8.0 — Chains + Super-Thermal Blade
+
+Adds the Chains + Super-Thermal Blade weapon package:
+- Chain Lash: 1d8 slashing with extended reach.
+- Chain Snare: 1d6 slashing; grapple/control resolution is manual.
+- Chain Pull: utility movement; token movement is manual.
+- Greatblade Slash: 2d6 slashing in Greatblade configuration.
+- Split Blades: bonus-action toggle between Greatblade and Split Blades configurations.
+- Split Blade Flurry: two separate 1d6 slashing attacks; the second strike launches automatically.
+- Thermal Cut: 1d10 slashing + 1d6 fire in Greatblade configuration.
+- Chainbreaker Combo: 1d8 slashing + 1d8 fire with manual pull/control rider.
+
+The item synchronizes configuration-specific activity visibility before the D&D5e activity picker opens.

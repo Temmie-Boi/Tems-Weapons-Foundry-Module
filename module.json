@@ -1,8 +1,8 @@
 {
   "id": "tems-weapons",
   "title": "Tem's Weapons",
-  "description": "Tem's custom D&D5e weapon library and automation, including Charge Blade, Claire's Might, Steamknights, Roulette Briefcase / Revolver, and Kickin Mystic Sword.",
-  "version": "1.7.1",
+  "description": "Tem's custom D&D5e weapon library and automation, including Charge Blade, Claire's Might, Steamknights, Roulette Briefcase / Revolver, Kickin Mystic Sword, and Chains + Super-Thermal Blade.",
+  "version": "1.8.0",
   "compatibility": {
     "minimum": "14",
     "verified": "14"
@@ -28,5 +28,5 @@
     "scripts/tems-weapons.js"
   ],
   "manifest": "https://raw.githubusercontent.com/Temmie-Boi/Tems-Weapons-Foundry-Module/main/module.json",
-  "download": "https://github.com/Temmie-Boi/Tems-Weapons-Foundry-Module/releases/download/v1.7.1/tems-weapons-v1.7.1.zip"
+  "download": "https://github.com/Temmie-Boi/Tems-Weapons-Foundry-Module/releases/download/v1.8.0/tems-weapons-v1.8.0.zip"
 }

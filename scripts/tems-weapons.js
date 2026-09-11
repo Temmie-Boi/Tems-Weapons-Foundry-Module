@@ -3001,6 +3001,73 @@ Hooks.on("createItem", async item => {
   }
 });
 
+
+/* ------------------------------------------------------------------------- */
+/* v1.8.0 — CHAINS + SUPER-THERMAL BLADE                                  */
+/* ------------------------------------------------------------------------- */
+
+const V180_FIESTA_WEAPON = "tems-fiesta-chains-super-thermal-blade";
+const V180_FIESTA_INTERNAL = new Set(["Split Blade Flurry — Second Strike"]);
+
+function v180FiestaBladeMode(item) {
+  return String(item?.getFlag("world", "temsFiestaBladeMode") ?? "greatblade") === "split" ? "split" : "greatblade";
+}
+
+async function v180SyncFiestaVisibility(item) {
+  if (!item || item.system?.identifier !== V180_FIESTA_WEAPON) return;
+  const mode = v180FiestaBladeMode(item);
+  const updates = {};
+
+  for (const activity of Array.from(item.system.activities ?? [])) {
+    const n = activity.name;
+    let visible = true;
+    if (V180_FIESTA_INTERNAL.has(n)) visible = false;
+    else if (["Greatblade Slash", "Thermal Cut"].includes(n)) visible = mode === "greatblade";
+    else if (n === "Split Blade Flurry") visible = mode === "split";
+    await v170SetActivityVisible(item, activity, visible, updates);
+  }
+
+  if (Object.keys(updates).length) await item.update(updates, {render:false});
+  item.prepareData?.();
+  if (item.sheet?.rendered) item.sheet.render({force:true});
+  if (item.actor?.sheet?.rendered) item.actor.sheet.render({force:true});
+}
+
+async function v180ToggleFiestaBlades(item) {
+  const next = v180FiestaBladeMode(item) === "greatblade" ? "split" : "greatblade";
+  await item.setFlag("world", "temsFiestaBladeMode", next);
+  await v180SyncFiestaVisibility(item);
+  ui.notifications.info(`Super-Thermal Blade → ${next === "split" ? "Split Blades" : "Greatblade"} configuration.`);
+}
+
+Hooks.on("dnd5e.preUseActivity", async activity => {
+  const item = getItem(activity);
+  if (item?.system?.identifier === V180_FIESTA_WEAPON) await v180SyncFiestaVisibility(item);
+});
+
+Hooks.on("dnd5e.postCreateUsageMessage", async activity => {
+  const item = getItem(activity);
+  if (item?.system?.identifier !== V180_FIESTA_WEAPON) return;
+  if (activity?.name === "Split Blades") return v180ToggleFiestaBlades(item);
+});
+
+Hooks.on("dnd5e.postRollAttack", async (rolls, data) => {
+  const activity = data?.subject;
+  const item = getItem(activity);
+  if (item?.system?.identifier !== V180_FIESTA_WEAPON) return;
+  if (activity?.name === "Split Blade Flurry") {
+    return v170RollFollowups(item, ["Split Blade Flurry — Second Strike"]);
+  }
+});
+
+Hooks.on("createItem", async item => {
+  try {
+    if (item.system?.identifier === V180_FIESTA_WEAPON) await v180SyncFiestaVisibility(item);
+  } catch (err) {
+    console.warn("Tem's Weapons | v1.8 createItem sync failed", item, err);
+  }
+});
+
 /* ------------------------------------------------------------------------- */
 /* BUNDLED WEAPON INSTALLER                                                  */
 /* ------------------------------------------------------------------------- */
@@ -3039,7 +3106,8 @@ const BUNDLED_WEAPONS = [
   { path: "items/fault/argus-steamknight.json", identifier: "tems-argus-steamknight", folder: "Fault" },
   { path: "items/rival/paris-steamknight.json", identifier: "tems-paris-steamknight", folder: "Rival" },
   { path: "items/pc-party/roulette-briefcase-revolver.json", identifier: "tems-roulette-briefcase-revolver", folder: null },
-  { path: "items/pc-party/kickin-mystic-sword.json", identifier: "tems-kickin-mystic-sword", folder: null }
+  { path: "items/pc-party/kickin-mystic-sword.json", identifier: "tems-kickin-mystic-sword", folder: null },
+  { path: "items/pc-party/chains-super-thermal-blade.json", identifier: "tems-fiesta-chains-super-thermal-blade", folder: null }
 ];
 
 async function ensureItemFolder(name, parent=null) {
@@ -3192,6 +3260,7 @@ Hooks.once("ready", async () => {
         if (item.system?.identifier === V160_IDS.ARGUS) await v160SyncArgus(item);
         if (item.system?.identifier === V170_IDS.ROULETTE) await v170SyncRouletteVisibility(item);
         if (item.system?.identifier === V170_IDS.MYSTIC) await v170SyncMysticVisibility(item);
+        if (item.system?.identifier === V180_FIESTA_WEAPON) await v180SyncFiestaVisibility(item);
       } catch (err) {
         console.warn("Tem's Weapons | Straightforward weapon initial sync failed", item, err);
       }
