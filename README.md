@@ -212,7 +212,7 @@ Position-dependent movement, pushes, save areas, firing-lane triggers, and movem
 
 Remote positioning, Dash movement, grapple movement, and blast-area placement remain manual where table geometry matters.
 
-## v1.8.0 — Chains + Super-Thermal Blade
+## v1.8.1 — Chains + Super-Thermal Blade
 
 Adds the Chains + Super-Thermal Blade weapon package:
 - Chain Lash: 1d8 slashing with extended reach.
@@ -225,3 +225,7 @@ Adds the Chains + Super-Thermal Blade weapon package:
 - Chainbreaker Combo: 1d8 slashing + 1d8 fire with manual pull/control rider.
 
 The item synchronizes configuration-specific activity visibility before the D&D5e activity picker opens.
+
+
+### v1.8.1
+- Fixed the Chains + Super-Thermal Blade mode visibility being inverted between Greatblade and Split Blades configurations.

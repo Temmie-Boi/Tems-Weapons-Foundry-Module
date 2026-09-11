@@ -3022,8 +3022,8 @@ async function v180SyncFiestaVisibility(item) {
     const n = activity.name;
     let visible = true;
     if (V180_FIESTA_INTERNAL.has(n)) visible = false;
-    else if (["Greatblade Slash", "Thermal Cut"].includes(n)) visible = mode === "greatblade";
-    else if (n === "Split Blade Flurry") visible = mode === "split";
+    else if (["Greatblade Slash", "Thermal Cut"].includes(n)) visible = mode === "split";
+    else if (n === "Split Blade Flurry") visible = mode === "greatblade";
     await v170SetActivityVisible(item, activity, visible, updates);
   }
 
